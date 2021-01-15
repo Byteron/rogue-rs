@@ -1,0 +1,188 @@
+use bevy::{prelude::*, utils::HashMap};
+use std::{
+    hash::Hash,
+    ops::{Add, AddAssign, Div},
+};
+
+pub struct Torch;
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Coordinates {
+    pub x: i32,
+    pub y: i32,
+}
+
+impl Coordinates {
+    pub fn new(x: i32, y: i32) -> Self {
+        Coordinates { x, y }
+    }
+
+    pub fn zero() -> Self {
+        Coordinates { x: 0, y: 0 }
+    }
+
+    pub fn to_vec(&self) -> Vec2 {
+        Vec2::new(self.x as f32, self.y as f32)
+    }
+
+    pub fn get_neighbors(&self) -> [Coordinates; 4] {
+        [
+            *self + Coordinates::new(0, -1),
+            *self + Coordinates::new(-1, 0),
+            *self + Coordinates::new(1, 0),
+            *self + Coordinates::new(0, 1),
+        ]
+    }
+}
+
+impl Add<Coordinates> for Coordinates {
+    type Output = Coordinates;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Coordinates {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
+    }
+}
+
+impl AddAssign<Coordinates> for Coordinates {
+    fn add_assign(&mut self, rhs: Coordinates) {
+        *self = *self + rhs;
+    }
+}
+
+impl Div<Coordinates> for Coordinates {
+    type Output = Coordinates;
+
+    fn div(self, rhs: Coordinates) -> Self::Output {
+        Coordinates {
+            x: self.x / rhs.x,
+            y: self.y / rhs.y,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct Tile {
+    pub material: Handle<ColorMaterial>,
+}
+
+pub struct TileSprite;
+
+pub struct TileSet {
+    tiles: Vec<Tile>,
+}
+
+impl TileSet {
+    pub fn create_tile(&mut self, material: Handle<ColorMaterial>) -> usize {
+        self.tiles.push(Tile { material });
+        self.tiles.len() - 1
+    }
+}
+
+impl Default for TileSet {
+    fn default() -> Self {
+        TileSet {
+            tiles: Vec::default(),
+        }
+    }
+}
+
+pub struct TileMap {
+    pub cell_size: Vec2,
+    pub tile_set: TileSet,
+    pub tiles: HashMap<Coordinates, Tile>,
+    sprites: HashMap<Coordinates, Entity>,
+}
+
+impl TileMap {
+    pub fn new(cell_size: Vec2) -> Self {
+        TileMap {
+            cell_size,
+            tile_set: TileSet::default(),
+            tiles: HashMap::default(),
+            sprites: HashMap::default(),
+        }
+    }
+
+    pub fn map_to_world(&self, coords: Coordinates) -> Vec3 {
+        (coords.to_vec() * self.cell_size).extend(0.0)
+    }
+
+    pub fn map_to_world_centered(&self, coords: Coordinates) -> Vec3 {
+        self.map_to_world(coords) + self.cell_size.extend(0.0) / Vec3::new(2.0, 2.0, 0.0)
+    }
+
+    pub fn world_to_map(&self, translation: Vec3) -> Coordinates {
+        let vec = (Vec2::new(translation.x, translation.y) / self.cell_size).floor();
+        Coordinates::new(vec.x as i32, vec.y as i32)
+    }
+
+    pub fn set_cell(&mut self, coords: Coordinates, index: usize) {
+        let tile = self.tile_set.tiles.get(index).unwrap().clone();
+        self.tiles.insert(coords, tile);
+    }
+}
+
+impl Default for TileMap {
+    fn default() -> Self {
+        TileMap {
+            cell_size: Vec2::new(64.0, 64.0),
+            tile_set: TileSet::default(),
+            tiles: HashMap::default(),
+            sprites: HashMap::default(),
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct TileMapPlugin;
+
+impl Plugin for TileMapPlugin {
+    fn build(&self, app: &mut AppBuilder) {
+        app.add_system(draw_tiles.system());
+    }
+}
+
+fn draw_tiles(
+    commands: &mut Commands,
+    mut query: Query<&mut TileMap, Changed<TileMap>>,
+    mut tile_materials: Query<&mut Handle<ColorMaterial>, With<TileSprite>>,
+) {
+    for mut map in query.iter_mut() {
+        let mut sprites: HashMap<Coordinates, Entity> = HashMap::default();
+
+        for (coords, tile) in map.tiles.iter() {
+            if !map.sprites.contains_key(coords) {
+                let entity = commands
+                    .spawn(SpriteBundle {
+                        material: tile.material.clone(),
+                        transform: Transform::from_translation(
+                            map.map_to_world(*coords) + Vec3::new(0.0, 0.0, -0.1),
+                        ),
+                        sprite: Sprite {
+                            size: map.cell_size,
+                            resize_mode: SpriteResizeMode::Manual,
+                        },
+                        ..Default::default()
+                    })
+                    .with(TileSprite)
+                    .current_entity()
+                    .unwrap();
+
+                sprites.insert(*coords, entity);
+            } else {
+                let entity = map.sprites.get(coords).unwrap();
+
+                let mut mat = tile_materials.get_mut(*entity).unwrap();
+
+                *mat = tile.material.clone();
+            }
+        }
+
+        for (coords, entity) in sprites.iter() {
+            map.sprites.insert(*coords, *entity);
+        }
+    }
+}
