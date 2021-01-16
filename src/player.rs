@@ -1,39 +1,48 @@
-use std::time::Duration;
-
 use bevy::prelude::*;
 
-use crate::{core::{Coordinates, Tween}, tile_map::TileMap};
+use crate::{
+    core::{Coordinates, Grid},
+    rogue::Room,
+};
 
 pub struct Player;
 
-pub fn step(mut query: Query<(&mut Transform, &Tween), (With<Player>, Changed<Tween>)>) {
-    for (mut transform, tween) in query.iter_mut() {
-        transform.translation = tween.value();
+pub struct StepTimer(pub Timer);
+
+pub fn step(
+    grid: Res<Grid>,
+    mut query: Query<(&mut Transform, &Coordinates), (With<Player>, Changed<Coordinates>)>,
+) {
+    for (mut transform, coords) in query.iter_mut() {
+        transform.translation = grid.map_to_world(*coords);
     }
 }
 
 pub fn input(
     input: Res<Input<KeyCode>>,
-    map: Res<TileMap>,
-    mut query: Query<(&mut Coordinates, &mut Tween), With<Player>>,
+    room: Res<Room>,
+    time: Res<Time>,
+    mut step_timer: ResMut<StepTimer>,
+    mut query: Query<&mut Coordinates, With<Player>>,
 ) {
-    for (mut coords, mut tween) in query.iter_mut() {
-        if !tween.finished() {
-            continue;
-        }
+    if !step_timer.0.finished() {
+        step_timer.0.tick(time.delta_seconds());
+        return;
+    }
 
+    for mut coords in query.iter_mut() {
         let direction = get_input_direction(&input);
 
         if direction != Coordinates::zero() {
-            let prev = *coords;
-
-            *coords += direction;
-
-            tween.tween(
-                map.map_to_world(prev),
-                map.map_to_world(*coords),
-                Duration::from_secs_f32(0.2),
-            );
+            if let Some(tile) = room.tiles.get(&(*coords + direction)) {
+                match tile {
+                    crate::rogue::Tile::Wall => {}
+                    crate::rogue::Tile::Floor => {
+                        *coords += direction;
+                        step_timer.0.reset();
+                    }
+                }
+            }
         }
     }
 }
@@ -43,17 +52,11 @@ fn get_input_direction(input: &Input<KeyCode>) -> Coordinates {
 
     if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {
         direction.y += 1;
-    }
-
-    if input.pressed(KeyCode::S) || input.pressed(KeyCode::Down) {
+    } else if input.pressed(KeyCode::S) || input.pressed(KeyCode::Down) {
         direction.y -= 1;
-    }
-
-    if input.pressed(KeyCode::D) || input.pressed(KeyCode::Right) {
+    } else if input.pressed(KeyCode::D) || input.pressed(KeyCode::Right) {
         direction.x += 1;
-    }
-
-    if input.pressed(KeyCode::A) || input.pressed(KeyCode::Left) {
+    } else if input.pressed(KeyCode::A) || input.pressed(KeyCode::Left) {
         direction.x -= 1;
     }
 

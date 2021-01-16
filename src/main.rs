@@ -1,7 +1,6 @@
 mod core;
-mod player;
 mod rogue;
-mod tile_map;
+mod player;
 
 use bevy::diagnostic::PrintDiagnosticsPlugin;
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;

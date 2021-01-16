@@ -1,51 +1,19 @@
 use bevy::prelude::*;
 
-use std::{
-    hash::Hash,
-    ops::{Add, AddAssign, Div},
-    time::Duration,
-};
+use std::{hash::Hash, ops::{Add, AddAssign, Div}, time::Duration};
 
-pub struct Tween {
-    start: Vec3,
-    end: Vec3,
-    timer: Timer,
+pub struct Grid {
+    cell_size: Vec2
 }
 
-impl Tween {
-    pub fn tween(&mut self, start: Vec3, end: Vec3, duration: Duration) {
-        self.start = start;
-        self.end = end;
-        self.timer.set_duration(duration.as_secs_f32());
-        self.timer.reset();
-    }
-
-    pub fn tick(&mut self, delta: f32) {
-        self.timer.tick(delta);
-    }
-
-    pub fn finished(&self) -> bool {
-        self.timer.finished()
-    }
-
-    pub fn value(&self) -> Vec3 {
-        self.start.lerp(self.end, self.timer.percent())
+impl Grid {
+    pub fn map_to_world(&self, coords: Coordinates) -> Vec3 {
+        (coords.to_vec() * self.cell_size).extend(0.0)
     }
 }
-
-impl Default for Tween {
+impl Default for Grid {
     fn default() -> Self {
-        Tween {
-            start: Vec3::zero(),
-            end: Vec3::zero(),
-            timer: Timer::default(),
-        }
-    }
-}
-
-pub fn tween_ticks(time: Res<Time>, mut query: Query<&mut Tween>) {
-    for mut tween in query.iter_mut() {
-        tween.tick(time.delta_seconds());
+        Grid { cell_size: Vec2::new(64.0, 64.0) }
     }
 }
 

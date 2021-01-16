@@ -1,23 +1,42 @@
+use std::{hash::Hash, time::Duration};
+
 use crate::{
-    core,
-    core::{Coordinates, Tween},
+    core::{Coordinates, Grid},
     player,
     player::*,
-    tile_map::*,
 };
 
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::HashMap};
 
 use rand::Rng;
+
+#[derive(Eq, PartialEq, Hash, Clone, Copy)]
+pub enum Tile {
+    Wall,
+    Floor,
+}
+
+pub struct Room {
+    pub tiles: HashMap<Coordinates, Tile>,
+}
+
+pub struct TileSet {
+    pub tiles: HashMap<Tile, Handle<ColorMaterial>>,
+}
+
+impl TileSet {
+    pub fn get(&self, tile: Tile) -> Handle<ColorMaterial> {
+        self.tiles.get(&tile).unwrap().clone()
+    }
+}
 
 pub struct Rogue;
 
 impl Plugin for Rogue {
     fn build(&self, app: &mut AppBuilder) {
         app.add_plugins(DefaultPlugins)
-            .add_plugin(TileMapPlugin)
+            .add_resource(Grid::default())
             .add_startup_system(setup.system())
-            .add_system(core::tween_ticks.system())
             .add_system(player::input.system())
             .add_system(player::step.system());
     }
@@ -27,49 +46,80 @@ fn setup(
     commands: &mut Commands,
     assets: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut map: ResMut<TileMap>
 ) {
-    generate_room(&mut map, &assets, &mut materials);
+    let mut tile_set = TileSet {
+        tiles: HashMap::default(),
+    };
+
+    tile_set.tiles.insert(
+        Tile::Wall,
+        materials.add(assets.load("images/wall.png").into()),
+    );
+    tile_set.tiles.insert(
+        Tile::Floor,
+        materials.add(assets.load("images/floor.png").into()),
+    );
+
+    commands.spawn(Camera2dBundle::default());
 
     commands
         .spawn(SpriteBundle {
             material: materials.add(assets.load("images/player.png").into()),
             transform: Transform::from_translation(Vec3::zero()),
             sprite: Sprite {
-                size: map.cell_size,
+                size: Vec2::new(64.0, 64.0),
                 resize_mode: SpriteResizeMode::Manual,
             },
             ..Default::default()
         })
         .with(Player)
-        .with(Coordinates::zero())
-        .with(TileMapCursor)
-        .with_bundle(Camera2dBundle::default())
-        .with(Tween::default());
+        .with(Coordinates::zero());
+
+    let mut room = generate_room();
+
+    spawn_room(commands, &mut tile_set, &mut room);
+    
+    commands.insert_resource(room);
+    commands.insert_resource(StepTimer(Timer::new(Duration::from_secs_f32(0.15), false)));
 }
 
-fn generate_room(map: &mut TileMap, assets: &AssetServer, materials: &mut Assets<ColorMaterial>) {
-    let floor_index = map
-        .tile_set
-        .create_tile(materials.add(assets.load("images/floor.png").into()));
-    let wall_index = map
-        .tile_set
-        .create_tile(materials.add(assets.load("images/wall.png").into()));
+fn generate_room() -> Room {
+    let mut room = Room {
+        tiles: HashMap::default(),
+    };
 
-    let extents = 100;
+    let extents = Coordinates::new(9, 5);
     let mut rng = rand::thread_rng();
 
-    for y in -extents..=extents {
-        for x in -extents..=extents {
-            if x == -extents || x == extents || y == -extents || y == extents {
-                map.set_cell(Coordinates::new(x, y), wall_index);
+    for y in -extents.y..=extents.y {
+        for x in -extents.x..=extents.x {
+            if x == -extents.x || x == extents.x || y == -extents.y || y == extents.y {
+                room.tiles.insert(Coordinates::new(x, y), Tile::Wall);
+            } else if rng.gen_bool(0.3) {
+                room.tiles.insert(Coordinates::new(x, y), Tile::Wall);
             } else {
-                if rng.gen_bool(0.3) {
-                    map.set_cell(Coordinates::new(x, y), wall_index);
-                } else {
-                    map.set_cell(Coordinates::new(x, y), floor_index);
-                }
+                room.tiles.insert(Coordinates::new(x, y), Tile::Floor);
             }
         }
+    }
+
+    room
+}
+
+fn spawn_room(commands: &mut Commands, tile_set: &mut TileSet, room: &mut Room) {
+    for (coords, tile) in room.tiles.iter() {
+        commands
+            .spawn(SpriteBundle {
+                material: tile_set.get(*tile),
+                transform: Transform::from_translation(
+                    coords.to_vec().extend(-0.1) * Vec3::new(64.0, 64.0, 1.0),
+                ),
+                sprite: Sprite {
+                    size: Vec2::new(64.0, 64.0),
+                    resize_mode: SpriteResizeMode::Manual,
+                },
+                ..Default::default()
+            })
+            .with(*coords);
     }
 }
