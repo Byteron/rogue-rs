@@ -32,21 +32,13 @@ impl Default for TileSet {
 
 pub struct TileMap {
     pub cell_size: Vec2,
+    pub draw_size: Vec2,
     pub tile_set: TileSet,
     pub tiles: HashMap<Coordinates, Tile>,
     sprites: HashMap<Coordinates, Entity>,
 }
 
 impl TileMap {
-    pub fn new(cell_size: Vec2) -> Self {
-        TileMap {
-            cell_size,
-            tile_set: TileSet::default(),
-            tiles: HashMap::default(),
-            sprites: HashMap::default(),
-        }
-    }
-
     pub fn map_to_world(&self, coords: Coordinates) -> Vec3 {
         (coords.to_vec() * self.cell_size).extend(0.0)
     }
@@ -70,6 +62,7 @@ impl Default for TileMap {
     fn default() -> Self {
         TileMap {
             cell_size: Vec2::new(64.0, 64.0),
+            draw_size: Vec2::new(12.0, 7.0),
             tile_set: TileSet::default(),
             tiles: HashMap::default(),
             sprites: HashMap::default(),
@@ -89,28 +82,33 @@ impl Plugin for TileMapPlugin {
 
 fn draw_tiles(
     commands: &mut Commands,
-    mut map : ResMut<TileMap>,
-    mut cursors: Query<&Coordinates, With<TileMapCursor>>,
-    mut tile_materials: Query<&mut Handle<ColorMaterial>, With<TileSprite>>,
+    mut map: ResMut<TileMap>,
+    cursors: Query<&Coordinates, With<TileMapCursor>>,
 ) {
-    let mut sprites: HashMap<Coordinates, Entity> = HashMap::default();
-
-    let mut kernel: Vec<Coordinates> = Vec::default();
-
-    let extents = Coordinates::new(10, 5);
-
+    
     for cursor in cursors.iter() {
-        for y in -extents.y..=extents.y {
-            for x in -extents.x..=extents.x {
+
+        let mut kernel: Vec<Coordinates> = Vec::default();
+        
+        for y in -map.draw_size.y as i32..=map.draw_size.y as i32 {
+            for x in -map.draw_size.x as i32..=map.draw_size.x as i32 {
                 kernel.push(Coordinates::new(x, y) + *cursor)
             }
         }
+
+        spawn(commands, &mut map, &kernel);
+        despawn(commands, &mut map, &kernel);
     }
+}
+
+fn spawn(commands: &mut Commands, map: &mut TileMap, kernel: &Vec<Coordinates>) {
+    let mut sprites: HashMap<Coordinates, Entity> = HashMap::default();
+
     for (coords, tile) in map.tiles.iter() {
         if !kernel.contains(coords) {
             continue;
         }
-        
+
         if !map.sprites.contains_key(coords) {
             let entity = commands
                 .spawn(SpriteBundle {
@@ -129,20 +127,17 @@ fn draw_tiles(
                 .unwrap();
 
             sprites.insert(*coords, entity);
-        } else {
-            let entity = map.sprites.get(coords).unwrap();
-
-            let mut mat = tile_materials.get_mut(*entity).unwrap();
-
-            *mat = tile.material.clone();
         }
     }
 
     for (coords, entity) in sprites.iter() {
         map.sprites.insert(*coords, *entity);
     }
+}
 
+fn despawn(commands: &mut Commands, map: &mut TileMap, kernel: &Vec<Coordinates>) {
     let mut removed: Vec<Coordinates> = Vec::default();
+
     for (coords, entity) in map.sprites.iter() {
         if !kernel.contains(coords) {
             commands.despawn(*entity);
@@ -154,3 +149,4 @@ fn draw_tiles(
         map.sprites.remove(coords);
     }
 }
+

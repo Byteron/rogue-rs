@@ -13,7 +13,7 @@ pub struct Tween {
 }
 
 impl Tween {
-    pub fn start(&mut self, start: Vec3, end: Vec3, duration: Duration) {
+    pub fn tween(&mut self, start: Vec3, end: Vec3, duration: Duration) {
         self.start = start;
         self.end = end;
         self.timer.set_duration(duration.as_secs_f32());

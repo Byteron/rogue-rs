@@ -25,14 +25,13 @@ pub fn input(
         let direction = get_input_direction(&input);
 
         if direction != Coordinates::zero() {
-            let cell_size = map.cell_size;
-            let start = *coords;
+            let prev = *coords;
 
             *coords += direction;
 
-            tween.start(
-                (start.to_vec() * cell_size).extend(0.0),
-                (coords.to_vec() * cell_size).extend(0.0),
+            tween.tween(
+                map.map_to_world(prev),
+                map.map_to_world(*coords),
                 Duration::from_secs_f32(0.2),
             );
         }
