@@ -78,7 +78,7 @@ fn setup(
     let mut room = generate_room();
 
     spawn_room(commands, &mut tile_set, &mut room);
-    
+
     commands.insert_resource(room);
     commands.insert_resource(StepTimer(Timer::new(Duration::from_secs_f32(0.15), false)));
 }

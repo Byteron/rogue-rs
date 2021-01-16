@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     core::{Coordinates, Grid},
-    rogue::Room,
+    rogue::*,
 };
 
 pub struct Player;
@@ -36,8 +36,10 @@ pub fn input(
         if direction != Coordinates::zero() {
             if let Some(tile) = room.tiles.get(&(*coords + direction)) {
                 match tile {
-                    crate::rogue::Tile::Wall => {}
-                    crate::rogue::Tile::Floor => {
+                    Tile::Wall => {
+                        // nothing
+                    }
+                    Tile::Floor => {
                         *coords += direction;
                         step_timer.0.reset();
                     }

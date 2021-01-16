@@ -1,9 +1,13 @@
 use bevy::prelude::*;
 
-use std::{hash::Hash, ops::{Add, AddAssign, Div}, time::Duration};
+use std::{
+    hash::Hash,
+    ops::{Add, AddAssign, Div},
+    time::Duration,
+};
 
 pub struct Grid {
-    cell_size: Vec2
+    cell_size: Vec2,
 }
 
 impl Grid {
@@ -13,7 +17,9 @@ impl Grid {
 }
 impl Default for Grid {
     fn default() -> Self {
-        Grid { cell_size: Vec2::new(64.0, 64.0) }
+        Grid {
+            cell_size: Vec2::new(64.0, 64.0),
+        }
     }
 }
 
