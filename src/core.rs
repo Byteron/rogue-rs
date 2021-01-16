@@ -1,7 +1,4 @@
-use bevy::{
-    core::Timer,
-    math::{Vec2, Vec3},
-};
+use bevy::prelude::*;
 
 use std::{
     hash::Hash,
@@ -43,6 +40,12 @@ impl Default for Tween {
             end: Vec3::zero(),
             timer: Timer::default(),
         }
+    }
+}
+
+pub fn tween_ticks(time: Res<Time>, mut query: Query<&mut Tween>) {
+    for mut tween in query.iter_mut() {
+        tween.tick(time.delta_seconds());
     }
 }
 

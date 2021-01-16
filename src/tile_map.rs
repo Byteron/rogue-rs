@@ -82,48 +82,75 @@ pub struct TileMapPlugin;
 
 impl Plugin for TileMapPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_system(draw_tiles.system());
+        app.add_resource(TileMap::default())
+            .add_system(draw_tiles.system());
     }
 }
 
 fn draw_tiles(
     commands: &mut Commands,
-    mut query: Query<&mut TileMap, Changed<TileMap>>,
+    mut map : ResMut<TileMap>,
+    mut cursors: Query<&Coordinates, With<TileMapCursor>>,
     mut tile_materials: Query<&mut Handle<ColorMaterial>, With<TileSprite>>,
 ) {
-    for mut map in query.iter_mut() {
-        let mut sprites: HashMap<Coordinates, Entity> = HashMap::default();
+    let mut sprites: HashMap<Coordinates, Entity> = HashMap::default();
 
-        for (coords, tile) in map.tiles.iter() {
-            if !map.sprites.contains_key(coords) {
-                let entity = commands
-                    .spawn(SpriteBundle {
-                        material: tile.material.clone(),
-                        transform: Transform::from_translation(
-                            map.map_to_world(*coords) + Vec3::new(0.0, 0.0, -0.1),
-                        ),
-                        sprite: Sprite {
-                            size: map.cell_size,
-                            resize_mode: SpriteResizeMode::Manual,
-                        },
-                        ..Default::default()
-                    })
-                    .with(TileSprite)
-                    .current_entity()
-                    .unwrap();
+    let mut kernel: Vec<Coordinates> = Vec::default();
 
-                sprites.insert(*coords, entity);
-            } else {
-                let entity = map.sprites.get(coords).unwrap();
+    let extents = Coordinates::new(10, 5);
 
-                let mut mat = tile_materials.get_mut(*entity).unwrap();
-
-                *mat = tile.material.clone();
+    for cursor in cursors.iter() {
+        for y in -extents.y..=extents.y {
+            for x in -extents.x..=extents.x {
+                kernel.push(Coordinates::new(x, y) + *cursor)
             }
         }
-
-        for (coords, entity) in sprites.iter() {
-            map.sprites.insert(*coords, *entity);
+    }
+    for (coords, tile) in map.tiles.iter() {
+        if !kernel.contains(coords) {
+            continue;
         }
+        
+        if !map.sprites.contains_key(coords) {
+            let entity = commands
+                .spawn(SpriteBundle {
+                    material: tile.material.clone(),
+                    transform: Transform::from_translation(
+                        map.map_to_world(*coords) + Vec3::new(0.0, 0.0, -0.05),
+                    ),
+                    sprite: Sprite {
+                        size: map.cell_size,
+                        resize_mode: SpriteResizeMode::Manual,
+                    },
+                    ..Default::default()
+                })
+                .with(TileSprite)
+                .current_entity()
+                .unwrap();
+
+            sprites.insert(*coords, entity);
+        } else {
+            let entity = map.sprites.get(coords).unwrap();
+
+            let mut mat = tile_materials.get_mut(*entity).unwrap();
+
+            *mat = tile.material.clone();
+        }
+    }
+
+    for (coords, entity) in sprites.iter() {
+        map.sprites.insert(*coords, *entity);
+    }
+
+    let mut removed: Vec<Coordinates> = Vec::default();
+    for (coords, entity) in map.sprites.iter() {
+        if !kernel.contains(coords) {
+            commands.despawn(*entity);
+            removed.push(*coords)
+        }
+    }
+
+    for coords in removed.iter() {
+        map.sprites.remove(coords);
     }
 }
