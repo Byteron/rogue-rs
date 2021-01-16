@@ -1,10 +1,25 @@
 use std::time::Duration;
 
-use crate::components::*;
 use crate::tile_map::*;
+use crate::{
+    components::*,
+    core::{Coordinates, Tween},
+};
 use bevy::prelude::*;
 
 use rand::Rng;
+
+pub struct Grid {
+    pub cell_size: Vec2,
+}
+
+impl Default for Grid {
+    fn default() -> Self {
+        Grid {
+            cell_size: Vec2::new(64.0, 64.0),
+        }
+    }
+}
 
 pub struct Rogue;
 
@@ -15,7 +30,7 @@ impl Plugin for Rogue {
             .add_startup_system(setup.system())
             .add_system(player_input.system())
             .add_system(player_step.system())
-            .add_system(player_transform.system());
+            .add_system(tween.system());
     }
 }
 
@@ -41,37 +56,50 @@ fn setup(
             ..Default::default()
         })
         .with(Player)
-        .with(Coordinates::zero());
+        .with(Coordinates::zero())
+        .with(Tween::default());
 
     commands.spawn(()).with(map);
-    commands.insert_resource(StepTimer::new(Duration::from_millis(150. as u64), true));
+
+    commands.insert_resource(Grid::default());
 }
 
-pub fn player_step(time: Res<Time>, mut timer: ResMut<StepTimer>) {
-    timer.tick(time.delta_seconds());
+fn tween(time: Res<Time>, mut query: Query<&mut Tween>) {
+    for mut tween in query.iter_mut() {
+        tween.tick(time.delta_seconds());
+    }
+}
+
+pub fn player_step(mut query: Query<(&mut Transform, &Tween), With<Player>>) {
+    for (mut transform, tween) in query.iter_mut() {
+        transform.translation = tween.value();
+    }
 }
 
 pub fn player_input(
     input: Res<Input<KeyCode>>,
-    timer: Res<StepTimer>,
-    mut query: Query<&mut Coordinates, With<Player>>,
+    grid: Res<Grid>,
+    mut query: Query<(&mut Coordinates, &mut Tween), With<Player>>,
 ) {
-    if !timer.finished() {
-        return;
-    }
+    for (mut coords, mut tween) in query.iter_mut() {
+        if !tween.finished() {
+            continue;
+        }
 
-    for mut coords in query.iter_mut() {
         let direction = get_input_direction(&input);
 
         if direction != Coordinates::zero() {
-            *coords += direction;
-        }
-    }
-}
+            let cell_size = grid.cell_size;
+            let start = *coords;
 
-pub fn player_transform(mut query: Query<(&Coordinates, &mut Transform), (With<Player>, Changed<Coordinates>)>) {
-    for (coords, mut transform) in query.iter_mut() {
-        transform.translation = coords.to_vec().extend(0.0) * Vec3::new(64.0, 64.0, 0.0);
+            *coords += direction;
+
+            tween.start(
+                (start.to_vec() * cell_size).extend(0.0),
+                (coords.to_vec() * cell_size).extend(0.0),
+                Duration::from_secs_f32(0.2),
+            );
+        }
     }
 }
 
