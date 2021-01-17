@@ -1,4 +1,4 @@
-use std::{hash::Hash, time::Duration};
+use std::{hash::Hash};
 
 use crate::{
     core::{Coordinates, Grid},
@@ -73,14 +73,14 @@ fn setup(
             ..Default::default()
         })
         .with(Player)
-        .with(Coordinates::zero());
+        .with(Coordinates::zero())
+        .with(StepTimer::default());
 
     let mut room = generate_room();
 
     spawn_room(commands, &mut tile_set, &mut room);
 
     commands.insert_resource(room);
-    commands.insert_resource(StepTimer(Timer::new(Duration::from_secs_f32(0.15), false)));
 }
 
 fn generate_room() -> Room {
