@@ -1,7 +1,7 @@
-use std::{hash::Hash};
+use std::hash::Hash;
 
 use crate::{
-    core::{Coordinates, Grid},
+    core::{self, Coordinates, Grid, Stepper},
     player,
     player::*,
 };
@@ -37,8 +37,8 @@ impl Plugin for Rogue {
         app.add_plugins(DefaultPlugins)
             .add_resource(Grid::default())
             .add_startup_system(setup.system())
-            .add_system(player::input.system())
-            .add_system(player::step.system());
+            .add_system(core::step.system())
+            .add_system(player::input.system());
     }
 }
 
@@ -73,8 +73,8 @@ fn setup(
             ..Default::default()
         })
         .with(Player)
-        .with(Coordinates::zero())
-        .with(StepTimer::default());
+        .with(Stepper::default())
+        .with(Coordinates::zero());
 
     let mut room = generate_room();
 

@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use std::{
     hash::Hash,
     ops::{Add, AddAssign, Div},
+    time::Duration,
 };
 
 pub struct Grid {
@@ -76,5 +77,36 @@ impl Div<Coordinates> for Coordinates {
             x: self.x / rhs.x,
             y: self.y / rhs.y,
         }
+    }
+}
+pub struct Stepper {
+    pub from: Vec3,
+    pub to: Vec3,
+    pub timer: Timer,
+}
+
+impl Stepper {
+    pub fn value(&self) -> Vec3 {
+        self.from.lerp(self.to, self.timer.percent())
+    }
+}
+
+impl Default for Stepper {
+    fn default() -> Self {
+        Stepper {
+            from: Vec3::zero(),
+            to: Vec3::zero(),
+            timer: Timer::new(Duration::from_secs_f32(0.15), false),
+        }
+    }
+}
+
+pub fn step(mut query: Query<(&mut Transform, &Stepper)>) {
+    for (mut transform, stepper) in query.iter_mut() {
+        if stepper.timer.finished() {
+            continue;
+        }
+
+        transform.translation = stepper.value();
     }
 }
