@@ -82,13 +82,26 @@ impl Div<Coordinates> for Coordinates {
 pub struct Stepper {
     pub from: Vec3,
     pub to: Vec3,
-    pub timer: Timer,
+    timer: Timer,
 }
 
 impl Stepper {
     pub fn value(&self) -> Vec3 {
         self.from.lerp(self.to, self.timer.percent())
     }
+
+    pub fn tick(&mut self, delta: f32) {
+        self.timer.tick(delta);
+    }
+    
+    pub fn reset(&mut self) {
+        self.timer.reset();
+    }
+
+    pub fn finished(&self) -> bool {
+        self.timer.finished()
+    }
+
 }
 
 impl Default for Stepper {
@@ -103,7 +116,7 @@ impl Default for Stepper {
 
 pub fn step(mut query: Query<(&mut Transform, &Stepper)>) {
     for (mut transform, stepper) in query.iter_mut() {
-        if stepper.timer.finished() {
+        if stepper.finished() {
             continue;
         }
 

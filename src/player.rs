@@ -15,8 +15,8 @@ pub fn input(
     mut query: Query<(&mut Coordinates, &mut Stepper), With<Player>>,
 ) {
     for (mut coords, mut stepper) in query.iter_mut() {
-        if !stepper.timer.finished() {
-            stepper.timer.tick(time.delta_seconds());
+        if !stepper.finished() {
+            stepper.tick(time.delta_seconds());
             continue;
         }
 
@@ -32,7 +32,7 @@ pub fn input(
                         stepper.from = grid.map_to_world(*coords);
                         *coords += direction;
                         stepper.to = grid.map_to_world(*coords);
-                        stepper.timer.reset();
+                        stepper.reset();
                     }
                 }
             }
