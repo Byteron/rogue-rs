@@ -1,6 +1,11 @@
 use bevy::{prelude::*, render::camera::Camera};
+use dungeon::EnemyType;
 
-use crate::{core::{Coordinates, Grid, Stepper}, dungeon, dungeon::{Level, TileType, Images}};
+use crate::{
+    core::{Coordinates, Grid, Stepper},
+    dungeon,
+    dungeon::{BoardObject, Images, Level, TileType},
+};
 
 pub struct Player;
 
@@ -12,7 +17,7 @@ pub fn input(
     time: Res<Time>,
     mut level: ResMut<Level>,
     mut query: Query<(&mut Coordinates, &mut Stepper), With<Player>>,
-    mut cameras: Query<&mut Transform, With<Camera>>
+    mut cameras: Query<&mut Transform, With<Camera>>,
 ) {
     for (mut coords, mut stepper) in query.iter_mut() {
         if !stepper.finished() {
@@ -20,43 +25,53 @@ pub fn input(
             continue;
         }
 
+        let mut room = level.get_current_room();
         let direction = get_input_direction(&input);
 
         if direction != Coordinates::zero() {
-            let from = *coords;
-            let to = *coords + direction;
-            
-            if level.get_current_room().is_exit(to) {
-                
-                dungeon::despawn_room(commands, level.get_current_room());
-                
+            let from_coords = *coords;
+            let to_coords = *coords + direction;
+
+            if room.is_exit(to_coords) {
+                dungeon::despawn_room(commands, &mut room);
+
                 level.change_current(direction);
-                
+
                 let mut camera_transform = cameras.get_mut(level.camera).unwrap();
 
                 let room = level.get_current_room();
 
                 dungeon::spawn_room(commands, &grid, &images, room);
-                
+
                 camera_transform.translation = grid.map_to_world(room.center());
 
-                stepper.from = grid.map_to_world(from);
-                stepper.to = grid.map_to_world(from);
+                stepper.from = grid.map_to_world(from_coords);
+                stepper.to = grid.map_to_world(from_coords);
 
                 stepper.reset();
-                
-            }
-            else if let Some(tile) = level.get_current_room().tiles.get(&(to)) {
-                match tile {
-                    TileType::Wall => {
-                        // nothing
-                    }
-                    TileType::Floor => {
-                        stepper.from = grid.map_to_world(from);
-                        stepper.to = grid.map_to_world(to);
-                        stepper.reset();
+            } else if let Some(tile) = room.tiles.get(&(to_coords)) {
+                if *tile == TileType::Floor {
+                    match room.objects.get(&to_coords) {
+                        Some(vec) => {
+                            for bob in vec {
+                                match bob {
+                                    BoardObject::Player => {}
+                                    BoardObject::Enemy(enemy) => {
+                                        // combat logic
+                                    }
+                                    BoardObject::Item(item) => {
+                                        // item collection logic
+                                    }
+                                }
+                            }
+                        }
+                        None => {
+                            stepper.from = grid.map_to_world(from_coords);
+                            stepper.to = grid.map_to_world(to_coords);
+                            stepper.reset();
 
-                        *coords = to;
+                            *coords = to_coords;
+                        }
                     }
                 }
             }

@@ -6,7 +6,7 @@ use crate::{
     player::*,
 };
 
-use bevy::{prelude::*, utils::HashMap};
+use bevy::prelude::*;
 
 pub struct Rogue;
 

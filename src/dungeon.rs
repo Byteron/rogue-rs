@@ -317,6 +317,7 @@ fn spawn_tile(
             },
             ..Default::default()
         })
+        .with(tile)
         .with(coords)
         .current_entity()
         .unwrap()
@@ -341,9 +342,9 @@ fn spawn_enemy(
             },
             ..Default::default()
         })
-        .with(EnemyType::Goblin)
-        .with(Stepper::new(translation))
+        .with(enemy)
         .with(coords)
+        .with(Stepper::new(translation))
         .current_entity()
         .unwrap()
 }
