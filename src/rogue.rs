@@ -1,34 +1,12 @@
-use std::hash::Hash;
-
 use crate::{
-    core::{self, Coordinates, Grid, Stepper},
+    core::{self, Grid, Stepper},
+    dungeon,
+    dungeon::*,
     player,
     player::*,
 };
 
 use bevy::{prelude::*, utils::HashMap};
-
-use rand::Rng;
-
-#[derive(Eq, PartialEq, Hash, Clone, Copy)]
-pub enum Tile {
-    Wall,
-    Floor,
-}
-
-pub struct Room {
-    pub tiles: HashMap<Coordinates, Tile>,
-}
-
-pub struct TileSet {
-    pub tiles: HashMap<Tile, Handle<ColorMaterial>>,
-}
-
-impl TileSet {
-    pub fn get(&self, tile: Tile) -> Handle<ColorMaterial> {
-        self.tiles.get(&tile).unwrap().clone()
-    }
-}
 
 pub struct Rogue;
 
@@ -44,82 +22,49 @@ impl Plugin for Rogue {
 
 fn setup(
     commands: &mut Commands,
+    grid: Res<Grid>,
     assets: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let mut tile_set = TileSet {
-        tiles: HashMap::default(),
-    };
+    let mut images = Images::default();
 
-    tile_set.tiles.insert(
-        Tile::Wall,
-        materials.add(assets.load("images/wall.png").into()),
-    );
-    tile_set.tiles.insert(
-        Tile::Floor,
-        materials.add(assets.load("images/floor.png").into()),
-    );
+    images.add_player(&assets, &mut materials, "images/player.png");
+    images.add_tile(&assets, &mut materials, TileType::Wall, "images/wall.png");
+    images.add_tile(&assets, &mut materials, TileType::Floor, "images/floor.png");
+    images.add_enemy(&assets, &mut materials, EnemyType::Goblin, "images/enemy.png");
 
-    commands.spawn(Camera2dBundle::default());
+    let mut level = dungeon::generate();
+
+    let mut room = level.get_current_room();
+
+    dungeon::spawn_room(commands, &grid, &images, &mut room);
+
+    let center = grid.map_to_world(room.center());
+
+    let camera = commands
+        .spawn(Camera2dBundle {
+            transform: Transform::from_translation(center),
+            ..Default::default()
+        })
+        .current_entity()
+        .unwrap();
 
     commands
         .spawn(SpriteBundle {
-            material: materials.add(assets.load("images/player.png").into()),
-            transform: Transform::from_translation(Vec3::zero()),
+            material: images.get_player(),
+            transform: Transform::from_translation(center),
             sprite: Sprite {
-                size: Vec2::new(64.0, 64.0),
+                size: grid.cell_size,
                 resize_mode: SpriteResizeMode::Manual,
             },
             ..Default::default()
         })
         .with(Player)
-        .with(Stepper::default())
-        .with(Coordinates::zero());
+        .with(Stepper::new(center))
+        .with(room.center());
 
-    let mut room = generate_room();
+    level.camera = camera;
 
-    spawn_room(commands, &mut tile_set, &mut room);
-
-    commands.insert_resource(room);
-}
-
-fn generate_room() -> Room {
-    let mut room = Room {
-        tiles: HashMap::default(),
-    };
-
-    let extents = Coordinates::new(9, 5);
-    let mut rng = rand::thread_rng();
-
-    for y in -extents.y..=extents.y {
-        for x in -extents.x..=extents.x {
-            if x == -extents.x || x == extents.x || y == -extents.y || y == extents.y {
-                room.tiles.insert(Coordinates::new(x, y), Tile::Wall);
-            } else if rng.gen_bool(0.3) {
-                room.tiles.insert(Coordinates::new(x, y), Tile::Wall);
-            } else {
-                room.tiles.insert(Coordinates::new(x, y), Tile::Floor);
-            }
-        }
-    }
-
-    room
-}
-
-fn spawn_room(commands: &mut Commands, tile_set: &mut TileSet, room: &mut Room) {
-    for (coords, tile) in room.tiles.iter() {
-        commands
-            .spawn(SpriteBundle {
-                material: tile_set.get(*tile),
-                transform: Transform::from_translation(
-                    coords.to_vec().extend(-0.1) * Vec3::new(64.0, 64.0, 1.0),
-                ),
-                sprite: Sprite {
-                    size: Vec2::new(64.0, 64.0),
-                    resize_mode: SpriteResizeMode::Manual,
-                },
-                ..Default::default()
-            })
-            .with(*coords);
-    }
+    commands.insert_resource(images);
+    commands.insert_resource(level);
 }

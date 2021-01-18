@@ -1,4 +1,5 @@
 mod core;
+mod dungeon;
 mod player;
 mod rogue;
 

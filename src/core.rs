@@ -1,13 +1,9 @@
 use bevy::prelude::*;
 
-use std::{
-    hash::Hash,
-    ops::{Add, AddAssign, Div},
-    time::Duration,
-};
+use std::{hash::Hash, ops::{Add, AddAssign, Div, Mul, Sub}, time::Duration};
 
 pub struct Grid {
-    cell_size: Vec2,
+    pub cell_size: Vec2,
 }
 
 impl Grid {
@@ -69,6 +65,28 @@ impl AddAssign<Coordinates> for Coordinates {
     }
 }
 
+impl Sub<Coordinates> for Coordinates {
+    type Output = Coordinates;
+
+    fn sub(self, rhs: Coordinates) -> Self::Output {
+        Coordinates {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+        }
+    }
+}
+
+impl Mul<Coordinates> for Coordinates {
+    type Output = Coordinates;
+
+    fn mul(self, rhs: Coordinates) -> Self::Output {
+        Coordinates {
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+        }
+    }
+}
+
 impl Div<Coordinates> for Coordinates {
     type Output = Coordinates;
 
@@ -79,6 +97,7 @@ impl Div<Coordinates> for Coordinates {
         }
     }
 }
+
 pub struct Stepper {
     pub from: Vec3,
     pub to: Vec3,
@@ -86,6 +105,14 @@ pub struct Stepper {
 }
 
 impl Stepper {
+    pub fn new(translation: Vec3) -> Self {
+        Stepper {
+            from: translation,
+            to: translation,
+            ..Default::default()
+        }
+    }
+
     pub fn value(&self) -> Vec3 {
         self.from.lerp(self.to, self.timer.percent())
     }
@@ -93,7 +120,7 @@ impl Stepper {
     pub fn tick(&mut self, delta: f32) {
         self.timer.tick(delta);
     }
-    
+
     pub fn reset(&mut self) {
         self.timer.reset();
     }
@@ -101,7 +128,6 @@ impl Stepper {
     pub fn finished(&self) -> bool {
         self.timer.finished()
     }
-
 }
 
 impl Default for Stepper {
