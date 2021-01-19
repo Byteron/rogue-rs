@@ -175,7 +175,6 @@ impl Room {
 type Level = HashMap<Coordinates, Room>;
 
 pub struct GameState {
-    pub camera: Entity,
     current_level: usize,
     current_room: Coordinates,
     levels: Vec<Level>,
@@ -213,7 +212,6 @@ impl GameState {
 impl Default for GameState {
     fn default() -> Self {
         GameState {
-            camera: Entity::new(0),
             current_level: 0,
             current_room: Coordinates::zero(),
             levels: Vec::default(),

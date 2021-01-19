@@ -1,5 +1,4 @@
 use bevy::{prelude::*, render::camera::Camera};
-use dungeon::EnemyType;
 
 use crate::{
     core::{Coordinates, Grid, Stepper, StepperMode},
@@ -37,7 +36,7 @@ pub fn input(
 
                 state.change_current_room(direction);
 
-                let mut camera_transform = cameras.get_mut(state.camera).unwrap();
+                let mut camera_transform = cameras.iter_mut().next().unwrap();
 
                 let room = state.get_current_room();
 

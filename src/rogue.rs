@@ -46,14 +46,12 @@ fn setup(
 
     let center = grid.map_to_world(room.center());
 
-    let camera = commands
+    commands
         .spawn(Camera2dBundle {
             transform: Transform::from_translation(center),
             ..Default::default()
-        })
-        .current_entity()
-        .unwrap();
-
+        });
+    
     commands
         .spawn(SpriteBundle {
             material: images.get_player(),
@@ -67,8 +65,6 @@ fn setup(
         .with(Player)
         .with(Stepper::new(center))
         .with(room.center());
-
-    state.camera = camera;
 
     commands.insert_resource(images);
     commands.insert_resource(state);
