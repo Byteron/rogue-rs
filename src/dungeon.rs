@@ -172,55 +172,80 @@ impl Room {
     }
 }
 
-pub struct Level {
+type Level = HashMap<Coordinates, Room>;
+
+pub struct GameState {
     pub camera: Entity,
-    rooms: HashMap<Coordinates, Room>,
-    current: Coordinates,
+    current_level: usize,
+    current_room: Coordinates,
+    levels: Vec<Level>,
 }
 
-impl Level {
+impl GameState {
+    pub fn add_level(&mut self) {
+        self.levels.push(Level::default());
+    }
+    
+    pub fn get_current_level(&mut self) -> &mut Level {
+        self.levels.get_mut(self.current_level).unwrap()
+    }
+
     pub fn get_current_room(&mut self) -> &mut Room {
-        self.rooms.get_mut(&self.current).unwrap()
+        let current_room = self.current_room;
+        self.get_current_level().get_mut(&current_room).unwrap()
     }
 
-    pub fn change_current(&mut self, direction: Coordinates) {
-        let new_current = self.current + direction;
-        if self.rooms.contains_key(&new_current) {
-            self.current = new_current;
+    pub fn change_current_level(&mut self, direction: usize) {
+        let new_level = self.current_level + direction;
+        if self.levels.len() > new_level {
+            self.current_level = new_level;
+        }
+    }
+
+    pub fn change_current_room(&mut self, direction: Coordinates) {
+        let new_room = self.current_room + direction;
+        if self.get_current_level().contains_key(&new_room) {
+            self.current_room = new_room;
         }
     }
 }
 
-impl Default for Level {
+impl Default for GameState {
     fn default() -> Self {
-        Level {
+        GameState {
             camera: Entity::new(0),
-            rooms: HashMap::default(),
-            current: Coordinates::zero(),
+            current_level: 0,
+            current_room: Coordinates::zero(),
+            levels: Vec::default(),
         }
     }
 }
 
-pub fn generate() -> Level {
-    let mut level = Level::default();
+pub fn generate() -> GameState {
+    let mut state = GameState::default();
 
-    let room_size = Coordinates::new(19, 11);
-    let level_size = Coordinates::new(10, 10);
+    for level in 0..=50 {
+        state.add_level();
+        state.change_current_level(1);
 
-    for y in -level_size.y..=level_size.y {
-        for x in -level_size.x..=level_size.x {
-            let room_coords = Coordinates::new(x, y);
-
-            let room = generate_room(
-                room_coords * (room_size - Coordinates::new(1, 1)),
-                room_size,
-            );
-
-            level.rooms.insert(room_coords, room);
+        let room_size = Coordinates::new(19, 11);
+        let level_size = Coordinates::new(10, 10);
+    
+        for y in -level_size.y..=level_size.y {
+            for x in -level_size.x..=level_size.x {
+                let room_coords = Coordinates::new(x, y);
+    
+                let room = generate_room(
+                    room_coords * (room_size - Coordinates::new(1, 1)),
+                    room_size,
+                );
+    
+                state.get_current_level().insert(room_coords, room);
+            }
         }
     }
 
-    level
+    state
 }
 
 pub fn generate_room(position: Coordinates, size: Coordinates) -> Room {

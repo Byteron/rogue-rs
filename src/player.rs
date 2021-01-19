@@ -1,11 +1,7 @@
 use bevy::{prelude::*, render::camera::Camera};
 use dungeon::EnemyType;
 
-use crate::{
-    core::{Coordinates, Grid, Stepper},
-    dungeon,
-    dungeon::{BoardObject, Images, Level, TileType},
-};
+use crate::{core::{Coordinates, Grid, Stepper, StepperMode}, dungeon, dungeon::{BoardObject, GameState, Images, TileType}};
 
 pub struct Player;
 
@@ -15,7 +11,7 @@ pub fn input(
     input: Res<Input<KeyCode>>,
     grid: Res<Grid>,
     time: Res<Time>,
-    mut level: ResMut<Level>,
+    mut state: ResMut<GameState>,
     mut query: Query<(&mut Coordinates, &mut Stepper), With<Player>>,
     mut cameras: Query<&mut Transform, With<Camera>>,
 ) {
@@ -25,7 +21,7 @@ pub fn input(
             continue;
         }
 
-        let mut room = level.get_current_room();
+        let mut room = state.get_current_room();
         let direction = get_input_direction(&input);
 
         if direction != Coordinates::zero() {
@@ -35,11 +31,11 @@ pub fn input(
             if room.is_exit(to_coords) {
                 dungeon::despawn_room(commands, &mut room);
 
-                level.change_current(direction);
+                state.change_current_room(direction);
 
-                let mut camera_transform = cameras.get_mut(level.camera).unwrap();
+                let mut camera_transform = cameras.get_mut(state.camera).unwrap();
 
-                let room = level.get_current_room();
+                let room = state.get_current_room();
 
                 dungeon::spawn_room(commands, &grid, &images, room);
 
@@ -48,7 +44,8 @@ pub fn input(
                 stepper.from = grid.map_to_world(from_coords);
                 stepper.to = grid.map_to_world(from_coords);
 
-                stepper.reset();
+                stepper.start(0.15, StepperMode::Move);
+
             } else if let Some(tile) = room.tiles.get(&(to_coords)) {
                 if *tile == TileType::Floor {
                     match room.objects.get(&to_coords) {
@@ -57,7 +54,9 @@ pub fn input(
                                 match bob {
                                     BoardObject::Player => {}
                                     BoardObject::Enemy(enemy) => {
-                                        // combat logic
+                                        stepper.from = grid.map_to_world(from_coords);
+                                        stepper.to = grid.map_to_world(to_coords);
+                                        stepper.start(0.15, StepperMode::Attack);
                                     }
                                     BoardObject::Item(item) => {
                                         // item collection logic
@@ -68,7 +67,7 @@ pub fn input(
                         None => {
                             stepper.from = grid.map_to_world(from_coords);
                             stepper.to = grid.map_to_world(to_coords);
-                            stepper.reset();
+                            stepper.start(0.15, StepperMode::Move);
 
                             *coords = to_coords;
                         }

@@ -1,6 +1,8 @@
-use bevy::prelude::*;
+use bevy::{math, prelude::*};
 
 use std::{hash::Hash, ops::{Add, AddAssign, Div, Mul, Sub}, time::Duration};
+
+use crate::{main, player::Player};
 
 pub struct Grid {
     pub cell_size: Vec2,
@@ -98,10 +100,16 @@ impl Div<Coordinates> for Coordinates {
     }
 }
 
+pub enum StepperMode {
+    Move,
+    Attack
+}
+
 pub struct Stepper {
     pub from: Vec3,
     pub to: Vec3,
     timer: Timer,
+    mode: StepperMode
 }
 
 impl Stepper {
@@ -114,14 +122,27 @@ impl Stepper {
     }
 
     pub fn value(&self) -> Vec3 {
-        self.from.lerp(self.to, self.timer.percent())
+        let time: f32;
+
+        match self.mode {
+            StepperMode::Move => {
+                time = self.timer.percent();
+            }
+            StepperMode::Attack => {
+                time = (1.0 - (self.timer.percent() * 2.0 - 1.0).abs()) / 2.0;
+            }
+        }
+
+        self.from.lerp(self.to, time)
     }
 
     pub fn tick(&mut self, delta: f32) {
         self.timer.tick(delta);
     }
 
-    pub fn reset(&mut self) {
+    pub fn start(&mut self, duration: f32, mode: StepperMode) {
+        self.mode = mode;
+        self.timer.set_duration(duration);
         self.timer.reset();
     }
 
@@ -136,16 +157,16 @@ impl Default for Stepper {
             from: Vec3::zero(),
             to: Vec3::zero(),
             timer: Timer::new(Duration::from_secs_f32(0.15), false),
+            mode: StepperMode::Move
         }
     }
 }
 
-pub fn step(mut query: Query<(&mut Transform, &Stepper)>) {
+pub fn step(mut query: Query<(&mut Transform, &Stepper), With<Player>>) {
     for (mut transform, stepper) in query.iter_mut() {
         if stepper.finished() {
             continue;
         }
-
         transform.translation = stepper.value();
     }
 }

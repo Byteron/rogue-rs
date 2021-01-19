@@ -10,8 +10,8 @@ use rogue::Rogue;
 
 fn main() {
     App::build()
-        .add_plugin(FrameTimeDiagnosticsPlugin)
-        .add_plugin(PrintDiagnosticsPlugin::default())
+        // .add_plugin(FrameTimeDiagnosticsPlugin)
+        // .add_plugin(PrintDiagnosticsPlugin::default())
         .add_plugin(Rogue)
         .run();
 }
