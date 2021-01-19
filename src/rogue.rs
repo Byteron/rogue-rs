@@ -38,9 +38,9 @@ fn setup(
         "images/enemy.png",
     );
 
-    let mut level = dungeon::generate();
+    let mut state = dungeon::generate();
 
-    let mut room = level.get_current_room();
+    let mut room = state.get_current_room();
 
     dungeon::spawn_room(commands, &grid, &images, &mut room);
 
@@ -68,8 +68,8 @@ fn setup(
         .with(Stepper::new(center))
         .with(room.center());
 
-    level.camera = camera;
+    state.camera = camera;
 
     commands.insert_resource(images);
-    commands.insert_resource(level);
+    commands.insert_resource(state);
 }
