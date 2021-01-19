@@ -185,7 +185,7 @@ impl GameState {
     pub fn add_level(&mut self) {
         self.levels.push(Level::default());
     }
-    
+
     pub fn get_current_level(&mut self) -> &mut Level {
         self.levels.get_mut(self.current_level).unwrap()
     }
@@ -230,16 +230,16 @@ pub fn generate() -> GameState {
 
         let room_size = Coordinates::new(19, 11);
         let level_size = Coordinates::new(10, 10);
-    
+
         for y in -level_size.y..=level_size.y {
             for x in -level_size.x..=level_size.x {
                 let room_coords = Coordinates::new(x, y);
-    
+
                 let room = generate_room(
                     room_coords * (room_size - Coordinates::new(1, 1)),
                     room_size,
                 );
-    
+
                 state.get_current_level().insert(room_coords, room);
             }
         }

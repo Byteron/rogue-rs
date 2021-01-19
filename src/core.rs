@@ -1,8 +1,12 @@
-use bevy::{math, prelude::*};
+use bevy::prelude::*;
 
-use std::{hash::Hash, ops::{Add, AddAssign, Div, Mul, Sub}, time::Duration};
+use std::{
+    hash::Hash,
+    ops::{Add, AddAssign, Div, Mul, Sub},
+    time::Duration,
+};
 
-use crate::{main, player::Player};
+use crate::player::Player;
 
 pub struct Grid {
     pub cell_size: Vec2,
@@ -102,14 +106,14 @@ impl Div<Coordinates> for Coordinates {
 
 pub enum StepperMode {
     Move,
-    Attack
+    Attack,
 }
 
 pub struct Stepper {
     pub from: Vec3,
     pub to: Vec3,
     timer: Timer,
-    mode: StepperMode
+    mode: StepperMode,
 }
 
 impl Stepper {
@@ -157,7 +161,7 @@ impl Default for Stepper {
             from: Vec3::zero(),
             to: Vec3::zero(),
             timer: Timer::new(Duration::from_secs_f32(0.15), false),
-            mode: StepperMode::Move
+            mode: StepperMode::Move,
         }
     }
 }

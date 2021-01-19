@@ -1,7 +1,11 @@
 use bevy::{prelude::*, render::camera::Camera};
 use dungeon::EnemyType;
 
-use crate::{core::{Coordinates, Grid, Stepper, StepperMode}, dungeon, dungeon::{BoardObject, GameState, Images, TileType}};
+use crate::{
+    core::{Coordinates, Grid, Stepper, StepperMode},
+    dungeon,
+    dungeon::{BoardObject, GameState, Images, TileType},
+};
 
 pub struct Player;
 
@@ -45,7 +49,6 @@ pub fn input(
                 stepper.to = grid.map_to_world(from_coords);
 
                 stepper.start(0.15, StepperMode::Move);
-
             } else if let Some(tile) = room.tiles.get(&(to_coords)) {
                 if *tile == TileType::Floor {
                     match room.objects.get(&to_coords) {

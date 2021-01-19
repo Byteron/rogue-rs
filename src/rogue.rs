@@ -31,7 +31,12 @@ fn setup(
     images.add_player(&assets, &mut materials, "images/player.png");
     images.add_tile(&assets, &mut materials, TileType::Wall, "images/wall.png");
     images.add_tile(&assets, &mut materials, TileType::Floor, "images/floor.png");
-    images.add_enemy(&assets, &mut materials, EnemyType::Goblin, "images/enemy.png");
+    images.add_enemy(
+        &assets,
+        &mut materials,
+        EnemyType::Goblin,
+        "images/enemy.png",
+    );
 
     let mut level = dungeon::generate();
 
