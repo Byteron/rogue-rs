@@ -1,4 +1,12 @@
-use crate::{core::Grid, dungeon, dungeon::*, player, player::*, tween::{Tween, TweenPlugin}};
+use crate::{
+    core::Grid,
+    despawn::DespawnPlugin,
+    dungeon,
+    dungeon::*,
+    player,
+    player::*,
+    tween::{Tween, TweenPlugin},
+};
 
 use bevy::prelude::*;
 
@@ -8,6 +16,7 @@ impl Plugin for Rogue {
     fn build(&self, app: &mut AppBuilder) {
         app.add_plugins(DefaultPlugins)
             .add_plugin(TweenPlugin)
+            .add_plugin(DespawnPlugin)
             .add_resource(Grid::default())
             .add_startup_system(setup.system())
             .add_system(player::input.system());
@@ -40,12 +49,11 @@ fn setup(
 
     let center = grid.map_to_world(room.center());
 
-    commands
-        .spawn(Camera2dBundle {
-            transform: Transform::from_translation(center),
-            ..Default::default()
-        });
-    
+    commands.spawn(Camera2dBundle {
+        transform: Transform::from_translation(center),
+        ..Default::default()
+    });
+
     commands
         .spawn(SpriteBundle {
             material: images.get_player(),

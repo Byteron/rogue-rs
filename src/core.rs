@@ -3,10 +3,9 @@ use bevy::prelude::*;
 use std::{
     hash::Hash,
     ops::{Add, AddAssign, Div, Mul, Sub},
-    time::Duration,
 };
 
-use crate::player::Player;
+pub struct Active;
 
 pub struct Grid {
     pub cell_size: Vec2,

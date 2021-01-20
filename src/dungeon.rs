@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use crate::{core::*, tween::Tween};
+use crate::{core::*, despawn::Despawn, tween::Tween};
 use bevy::{prelude::*, utils::HashMap};
 use rand::Rng;
 
@@ -111,7 +111,6 @@ pub struct Room {
     pub size: Coordinates,
     pub tiles: HashMap<Coordinates, TileType>,
     pub objects: HashMap<Coordinates, Vec<BoardObject>>,
-    pub entities: Vec<Entity>,
 }
 
 impl Room {
@@ -252,7 +251,6 @@ pub fn generate_room(position: Coordinates, size: Coordinates) -> Room {
         size,
         tiles: HashMap::default(),
         objects: HashMap::default(),
-        entities: Vec::default(),
     };
 
     let mut rng = rand::thread_rng();
@@ -288,11 +286,8 @@ pub fn generate_room(position: Coordinates, size: Coordinates) -> Room {
 }
 
 pub fn spawn_room(commands: &mut Commands, grid: &Grid, images: &Images, room: &mut Room) {
-    let mut entities: Vec<Entity> = Vec::default();
-
     for (coords, tile) in room.tiles.iter() {
-        let entity = spawn_tile(commands, grid, images, *tile, *coords);
-        entities.push(entity);
+        spawn_tile(commands, grid, images, *tile, *coords);
     }
 
     for (coords, objects) in room.objects.iter() {
@@ -300,25 +295,18 @@ pub fn spawn_room(commands: &mut Commands, grid: &Grid, images: &Images, room: &
             match bob {
                 BoardObject::Player => {}
                 BoardObject::Enemy(enemy) => {
-                    let entity = spawn_enemy(commands, grid, images, *enemy, *coords);
-                    entities.push(entity);
+                    spawn_enemy(commands, grid, images, *enemy, *coords);
                 }
                 BoardObject::Item(item) => {}
             }
         }
     }
-
-    for entity in entities.iter() {
-        room.entities.push(*entity);
-    }
 }
 
-pub fn despawn_room(commands: &mut Commands, room: &mut Room) {
-    for entity in room.entities.iter() {
-        commands.despawn(*entity);
+pub fn prepare_despawn(commands: &mut Commands, active_entities: &mut Query<Entity, With<Active>>) {
+    for entity in active_entities.iter() {
+        commands.insert_one(entity, Despawn);
     }
-
-    room.entities.clear();
 }
 
 fn spawn_tile(
@@ -327,7 +315,7 @@ fn spawn_tile(
     images: &Images,
     tile: TileType,
     coords: Coordinates,
-) -> Entity {
+) {
     let translation = grid.map_to_world(coords) + Vec3::new(0.0, 0.0, -0.1);
 
     commands
@@ -340,10 +328,9 @@ fn spawn_tile(
             },
             ..Default::default()
         })
+        .with(Active)
         .with(tile)
-        .with(coords)
-        .current_entity()
-        .unwrap()
+        .with(coords);
 }
 
 fn spawn_enemy(
@@ -352,7 +339,7 @@ fn spawn_enemy(
     images: &Images,
     enemy: EnemyType,
     coords: Coordinates,
-) -> Entity {
+) {
     let translation = grid.map_to_world(coords);
 
     commands
@@ -365,9 +352,8 @@ fn spawn_enemy(
             },
             ..Default::default()
         })
+        .with(Active)
         .with(enemy)
         .with(coords)
-        .with(Tween::new(translation))
-        .current_entity()
-        .unwrap()
+        .with(Tween::new(translation));
 }

@@ -1,6 +1,11 @@
 use bevy::{prelude::*, render::camera::Camera};
 
-use crate::{core::{Coordinates, Grid}, dungeon, dungeon::{BoardObject, GameState, Images, TileType}, tween::{Tween, TweenMode}};
+use crate::{
+    core::{Active, Coordinates, Grid},
+    dungeon,
+    dungeon::{BoardObject, GameState, Images, TileType},
+    tween::{Tween, TweenMode},
+};
 
 pub struct Player;
 
@@ -11,16 +16,17 @@ pub fn input(
     grid: Res<Grid>,
     time: Res<Time>,
     mut state: ResMut<GameState>,
-    mut query: Query<(&mut Coordinates, &mut Tween), With<Player>>,
+    mut players: Query<(&mut Coordinates, &mut Tween), With<Player>>,
     mut cameras: Query<&mut Transform, With<Camera>>,
+    mut active_entities: Query<Entity, With<Active>>,
 ) {
-    for (mut coords, mut tween) in query.iter_mut() {
+    for (mut coords, mut tween) in players.iter_mut() {
         if !tween.finished() {
             tween.tick(time.delta_seconds());
             continue;
         }
 
-        let mut room = state.get_current_room();
+        let room = state.get_current_room();
         let direction = get_input_direction(&input);
 
         if direction != Coordinates::zero() {
@@ -28,7 +34,7 @@ pub fn input(
             let to_coords = *coords + direction;
 
             if room.is_exit(to_coords) {
-                dungeon::despawn_room(commands, &mut room);
+                dungeon::prepare_despawn(commands, &mut active_entities);
 
                 state.change_current_room(direction);
 
