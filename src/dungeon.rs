@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use crate::core::*;
+use crate::{core::*, tween::Tween};
 use bevy::{prelude::*, utils::HashMap};
 use rand::Rng;
 
@@ -367,7 +367,7 @@ fn spawn_enemy(
         })
         .with(enemy)
         .with(coords)
-        .with(Stepper::new(translation))
+        .with(Tween::new(translation))
         .current_entity()
         .unwrap()
 }

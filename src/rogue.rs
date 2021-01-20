@@ -1,10 +1,4 @@
-use crate::{
-    core::{self, Grid, Stepper},
-    dungeon,
-    dungeon::*,
-    player,
-    player::*,
-};
+use crate::{core::Grid, dungeon, dungeon::*, player, player::*, tween::{Tween, TweenPlugin}};
 
 use bevy::prelude::*;
 
@@ -13,9 +7,9 @@ pub struct Rogue;
 impl Plugin for Rogue {
     fn build(&self, app: &mut AppBuilder) {
         app.add_plugins(DefaultPlugins)
+            .add_plugin(TweenPlugin)
             .add_resource(Grid::default())
             .add_startup_system(setup.system())
-            .add_system(core::step.system())
             .add_system(player::input.system());
     }
 }
@@ -63,7 +57,7 @@ fn setup(
             ..Default::default()
         })
         .with(Player)
-        .with(Stepper::new(center))
+        .with(Tween::new(center))
         .with(room.center());
 
     commands.insert_resource(images);

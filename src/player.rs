@@ -1,10 +1,6 @@
 use bevy::{prelude::*, render::camera::Camera};
 
-use crate::{
-    core::{Coordinates, Grid, Stepper, StepperMode},
-    dungeon,
-    dungeon::{BoardObject, GameState, Images, TileType},
-};
+use crate::{core::{Coordinates, Grid}, dungeon, dungeon::{BoardObject, GameState, Images, TileType}, tween::{Tween, TweenMode}};
 
 pub struct Player;
 
@@ -15,12 +11,12 @@ pub fn input(
     grid: Res<Grid>,
     time: Res<Time>,
     mut state: ResMut<GameState>,
-    mut query: Query<(&mut Coordinates, &mut Stepper), With<Player>>,
+    mut query: Query<(&mut Coordinates, &mut Tween), With<Player>>,
     mut cameras: Query<&mut Transform, With<Camera>>,
 ) {
-    for (mut coords, mut stepper) in query.iter_mut() {
-        if !stepper.finished() {
-            stepper.tick(time.delta_seconds());
+    for (mut coords, mut tween) in query.iter_mut() {
+        if !tween.finished() {
+            tween.tick(time.delta_seconds());
             continue;
         }
 
@@ -44,10 +40,10 @@ pub fn input(
 
                 camera_transform.translation = grid.map_to_world(room.center());
 
-                stepper.from = grid.map_to_world(from_coords);
-                stepper.to = grid.map_to_world(from_coords);
+                tween.from = grid.map_to_world(from_coords);
+                tween.to = grid.map_to_world(from_coords);
 
-                stepper.start(0.15, StepperMode::Move);
+                tween.start(0.15, TweenMode::Move);
             } else if let Some(tile) = room.tiles.get(&(to_coords)) {
                 if *tile == TileType::Floor {
                     match room.objects.get(&to_coords) {
@@ -56,9 +52,9 @@ pub fn input(
                                 match bob {
                                     BoardObject::Player => {}
                                     BoardObject::Enemy(enemy) => {
-                                        stepper.from = grid.map_to_world(from_coords);
-                                        stepper.to = grid.map_to_world(to_coords);
-                                        stepper.start(0.15, StepperMode::Attack);
+                                        tween.from = grid.map_to_world(from_coords);
+                                        tween.to = grid.map_to_world(to_coords);
+                                        tween.start(0.15, TweenMode::Attack);
                                     }
                                     BoardObject::Item(item) => {
                                         // item collection logic
@@ -67,9 +63,9 @@ pub fn input(
                             }
                         }
                         None => {
-                            stepper.from = grid.map_to_world(from_coords);
-                            stepper.to = grid.map_to_world(to_coords);
-                            stepper.start(0.15, StepperMode::Move);
+                            tween.from = grid.map_to_world(from_coords);
+                            tween.to = grid.map_to_world(to_coords);
+                            tween.start(0.15, TweenMode::Move);
 
                             *coords = to_coords;
                         }
