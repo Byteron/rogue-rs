@@ -2,7 +2,7 @@ use bevy::{prelude::*, render::camera::Camera};
 
 use crate::{
     core::{Active, Coordinates, Grid},
-    dungeon,
+    despawn, dungeon,
     dungeon::{BoardObject, GameState, Images, TileType},
     tween::{Tween, TweenMode},
 };
@@ -34,7 +34,7 @@ pub fn input(
             let to_coords = *coords + direction;
 
             if room.is_exit(to_coords) {
-                dungeon::prepare_despawn(commands, &mut active_entities);
+                despawn::prepare_despawn(commands, &mut active_entities);
 
                 state.change_current_room(direction);
 

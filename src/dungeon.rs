@@ -221,7 +221,7 @@ impl Default for GameState {
 pub fn generate() -> GameState {
     let mut state = GameState::default();
 
-    for level in 0..=50 {
+    for _ in 0..=50 {
         state.add_level();
         state.change_current_level(1);
 
@@ -300,12 +300,6 @@ pub fn spawn_room(commands: &mut Commands, grid: &Grid, images: &Images, room: &
                 BoardObject::Item(item) => {}
             }
         }
-    }
-}
-
-pub fn prepare_despawn(commands: &mut Commands, active_entities: &mut Query<Entity, With<Active>>) {
-    for entity in active_entities.iter() {
-        commands.insert_one(entity, Despawn);
     }
 }
 
