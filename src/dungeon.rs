@@ -1,8 +1,14 @@
 use std::hash::Hash;
 
-use crate::{core::*, despawn::Despawn, tween::Tween};
-use bevy::{prelude::*, utils::HashMap};
+use crate::{core::*, despawn, tween::Tween};
+use bevy::{prelude::*, render::camera::Camera, utils::HashMap};
 use rand::Rng;
+
+pub struct ExitRoomEvent {
+    pub direction: Coordinates,
+}
+
+pub struct EnterRoomEvent;
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy)]
 pub enum TileType {
@@ -218,6 +224,36 @@ impl Default for GameState {
     }
 }
 
+pub fn on_exit_room(
+    commands: &mut Commands,
+    mut events: ResMut<Events<EnterRoomEvent>>,
+    mut event_reader: EventReader<ExitRoomEvent>,
+    mut state: ResMut<GameState>,
+    mut active_entities: Query<Entity, With<Active>>,
+) {
+    for event in event_reader.iter() {
+        despawn::prepare_despawn(commands, &mut active_entities);
+        state.change_current_room(event.direction);
+        events.send(EnterRoomEvent);
+    }
+}
+
+pub fn on_enter_room(
+    commands: &mut Commands,
+    mut events: EventReader<EnterRoomEvent>,
+    images: Res<Images>,
+    grid: Res<Grid>,
+    mut state: ResMut<GameState>,
+    mut cameras: Query<&mut Transform, With<Camera>>,
+) {
+    for _ in events.iter() {
+        let mut camera_transform = cameras.iter_mut().next().unwrap();
+        let room = state.get_current_room();
+        spawn_room(commands, &grid, &images, room);
+        camera_transform.translation = grid.map_to_world(room.center());
+    }
+}
+
 pub fn generate() -> GameState {
     let mut state = GameState::default();
 
@@ -285,7 +321,7 @@ pub fn generate_room(position: Coordinates, size: Coordinates) -> Room {
     room
 }
 
-pub fn spawn_room(commands: &mut Commands, grid: &Grid, images: &Images, room: &mut Room) {
+fn spawn_room(commands: &mut Commands, grid: &Grid, images: &Images, room: &mut Room) {
     for (coords, tile) in room.tiles.iter() {
         spawn_tile(commands, grid, images, *tile, *coords);
     }

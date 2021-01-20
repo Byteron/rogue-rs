@@ -1,5 +1,5 @@
 use crate::{
-    core::Grid,
+    core::{Coordinates, Grid},
     despawn::DespawnPlugin,
     dungeon,
     dungeon::*,
@@ -17,8 +17,12 @@ impl Plugin for Rogue {
         app.add_plugins(DefaultPlugins)
             .add_plugin(TweenPlugin)
             .add_plugin(DespawnPlugin)
+            .add_event::<ExitRoomEvent>()
+            .add_event::<EnterRoomEvent>()
             .add_resource(Grid::default())
             .add_startup_system(setup.system())
+            .add_system(dungeon::on_exit_room.system())
+            .add_system(dungeon::on_enter_room.system())
             .add_system(player::input.system());
     }
 }
@@ -27,6 +31,7 @@ fn setup(
     commands: &mut Commands,
     grid: Res<Grid>,
     assets: Res<AssetServer>,
+    mut events: ResMut<Events<ExitRoomEvent>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let mut images = Images::default();
@@ -43,9 +48,11 @@ fn setup(
 
     let mut state = dungeon::generate();
 
-    let mut room = state.get_current_room();
+    events.send(ExitRoomEvent {
+        direction: Coordinates::zero(),
+    });
 
-    dungeon::spawn_room(commands, &grid, &images, &mut room);
+    let room = state.get_current_room();
 
     let center = grid.map_to_world(room.center());
 
