@@ -5,8 +5,6 @@ use std::{
     ops::{Add, AddAssign, Div, Mul, Sub},
 };
 
-pub struct Active;
-
 pub struct Grid {
     pub cell_size: Vec2,
 }

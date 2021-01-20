@@ -2,12 +2,14 @@ use std::hash::Hash;
 
 use crate::{
     core::*,
-    despawn::{self, DespawnPlugin},
+    despawn::{Despawn, DespawnPlugin},
     images::Images,
     tween::Tween,
 };
 use bevy::{prelude::*, render::camera::Camera, utils::HashMap};
 use rand::Rng;
+
+struct Active;
 
 pub struct ExitRoomEvent {
     pub direction: Coordinates,
@@ -171,7 +173,7 @@ fn on_exit_room(
     mut active_entities: Query<Entity, With<Active>>,
 ) {
     for event in event_reader.iter() {
-        despawn::prepare_despawn(commands, &mut active_entities);
+        prepare_despawn(commands, &mut active_entities);
         state.change_current_room(event.direction);
         events.send(EnterRoomEvent);
     }
@@ -325,4 +327,10 @@ fn spawn_enemy(
         .with(enemy)
         .with(coords)
         .with(Tween::new(translation));
+}
+
+fn prepare_despawn(commands: &mut Commands, active_entities: &mut Query<Entity, With<Active>>) {
+    for entity in active_entities.iter() {
+        commands.insert_one(entity, Despawn);
+    }
 }
