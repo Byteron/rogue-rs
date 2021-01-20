@@ -67,7 +67,7 @@ pub fn input(
     }
 }
 
-pub fn change_room(
+fn change_room(
     commands: &mut Commands,
     images: &Images,
     grid: &Grid,
@@ -96,7 +96,7 @@ pub fn change_room(
     tween.start(0.15, TweenMode::Move);
 }
 
-pub fn handle_bobs(
+fn handle_bobs(
     grid: &Grid,
     bobs: &Vec<BoardObject>,
     from_coords: Coordinates,
