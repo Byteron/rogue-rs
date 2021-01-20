@@ -1,6 +1,11 @@
 use std::hash::Hash;
 
-use crate::{core::*, despawn, tween::Tween};
+use crate::{
+    core::*,
+    despawn::{self, DespawnPlugin},
+    images::Images,
+    tween::Tween,
+};
 use bevy::{prelude::*, render::camera::Camera, utils::HashMap};
 use rand::Rng;
 
@@ -8,7 +13,7 @@ pub struct ExitRoomEvent {
     pub direction: Coordinates,
 }
 
-pub struct EnterRoomEvent;
+struct EnterRoomEvent;
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy)]
 pub enum TileType {
@@ -32,84 +37,6 @@ pub enum BoardObject {
     Player,
     Enemy(EnemyType),
     Item(ItemType),
-}
-
-pub struct Images {
-    pub player: Handle<ColorMaterial>,
-    pub tiles: HashMap<TileType, Handle<ColorMaterial>>,
-    pub enemies: HashMap<EnemyType, Handle<ColorMaterial>>,
-    pub items: HashMap<ItemType, Handle<ColorMaterial>>,
-}
-
-impl Images {
-    pub fn add_player(
-        &mut self,
-        assets: &AssetServer,
-        materials: &mut Assets<ColorMaterial>,
-        path: &str,
-    ) {
-        self.player = materials.add(assets.load(path).into());
-    }
-
-    pub fn add_tile(
-        &mut self,
-        assets: &AssetServer,
-        materials: &mut Assets<ColorMaterial>,
-        tile: TileType,
-        path: &str,
-    ) {
-        self.tiles
-            .insert(tile, materials.add(assets.load(path).into()));
-    }
-
-    pub fn add_enemy(
-        &mut self,
-        assets: &AssetServer,
-        materials: &mut Assets<ColorMaterial>,
-        enemy: EnemyType,
-        path: &str,
-    ) {
-        self.enemies
-            .insert(enemy, materials.add(assets.load(path).into()));
-    }
-
-    pub fn add_item(
-        &mut self,
-        assets: &AssetServer,
-        materials: &mut Assets<ColorMaterial>,
-        item: ItemType,
-        path: &str,
-    ) {
-        self.items
-            .insert(item, materials.add(assets.load(path).into()));
-    }
-
-    pub fn get_player(&self) -> Handle<ColorMaterial> {
-        self.player.clone()
-    }
-
-    pub fn get_tile(&self, tile: TileType) -> Handle<ColorMaterial> {
-        self.tiles.get(&tile).unwrap().clone()
-    }
-
-    pub fn get_enemy(&self, enemy: EnemyType) -> Handle<ColorMaterial> {
-        self.enemies.get(&enemy).unwrap().clone()
-    }
-
-    pub fn get_item(&self, item: ItemType) -> Handle<ColorMaterial> {
-        self.items.get(&item).unwrap().clone()
-    }
-}
-
-impl Default for Images {
-    fn default() -> Self {
-        Images {
-            player: Handle::default(),
-            tiles: HashMap::default(),
-            enemies: HashMap::default(),
-            items: HashMap::default(),
-        }
-    }
 }
 
 pub struct Room {
@@ -224,7 +151,19 @@ impl Default for GameState {
     }
 }
 
-pub fn on_exit_room(
+pub struct DungeonPlugin;
+
+impl Plugin for DungeonPlugin {
+    fn build(&self, app: &mut AppBuilder) {
+        app.add_plugin(DespawnPlugin)
+            .add_event::<ExitRoomEvent>()
+            .add_event::<EnterRoomEvent>()
+            .add_system(on_exit_room.system())
+            .add_system(on_enter_room.system());
+    }
+}
+
+fn on_exit_room(
     commands: &mut Commands,
     mut events: ResMut<Events<EnterRoomEvent>>,
     mut event_reader: EventReader<ExitRoomEvent>,
@@ -238,7 +177,7 @@ pub fn on_exit_room(
     }
 }
 
-pub fn on_enter_room(
+fn on_enter_room(
     commands: &mut Commands,
     mut events: EventReader<EnterRoomEvent>,
     images: Res<Images>,
@@ -281,7 +220,7 @@ pub fn generate() -> GameState {
     state
 }
 
-pub fn generate_room(position: Coordinates, size: Coordinates) -> Room {
+fn generate_room(position: Coordinates, size: Coordinates) -> Room {
     let mut room = Room {
         position,
         size,

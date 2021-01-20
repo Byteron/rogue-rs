@@ -1,12 +1,4 @@
-use crate::{
-    core::{Coordinates, Grid},
-    despawn::DespawnPlugin,
-    dungeon,
-    dungeon::*,
-    player,
-    player::*,
-    tween::{Tween, TweenPlugin},
-};
+use crate::{core::{Coordinates, Grid}, dungeon, dungeon::*, images::{Images, ImagesPlugin}, player, player::*, tween::{Tween, TweenPlugin}};
 
 use bevy::prelude::*;
 
@@ -15,14 +7,11 @@ pub struct Rogue;
 impl Plugin for Rogue {
     fn build(&self, app: &mut AppBuilder) {
         app.add_plugins(DefaultPlugins)
+            .add_plugin(ImagesPlugin)
             .add_plugin(TweenPlugin)
-            .add_plugin(DespawnPlugin)
-            .add_event::<ExitRoomEvent>()
-            .add_event::<EnterRoomEvent>()
+            .add_plugin(DungeonPlugin)
             .add_resource(Grid::default())
             .add_startup_system(setup.system())
-            .add_system(dungeon::on_exit_room.system())
-            .add_system(dungeon::on_enter_room.system())
             .add_system(player::input.system());
     }
 }
@@ -30,27 +19,10 @@ impl Plugin for Rogue {
 fn setup(
     commands: &mut Commands,
     grid: Res<Grid>,
-    assets: Res<AssetServer>,
+    images: Res<Images>,
     mut events: ResMut<Events<ExitRoomEvent>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let mut images = Images::default();
-
-    images.add_player(&assets, &mut materials, "images/player.png");
-    images.add_tile(&assets, &mut materials, TileType::Wall, "images/wall.png");
-    images.add_tile(&assets, &mut materials, TileType::Floor, "images/floor.png");
-    images.add_enemy(
-        &assets,
-        &mut materials,
-        EnemyType::Goblin,
-        "images/enemy.png",
-    );
-
     let mut state = dungeon::generate();
-
-    events.send(ExitRoomEvent {
-        direction: Coordinates::zero(),
-    });
 
     let room = state.get_current_room();
 
@@ -75,6 +47,9 @@ fn setup(
         .with(Tween::new(center))
         .with(room.center());
 
-    commands.insert_resource(images);
     commands.insert_resource(state);
+
+    events.send(ExitRoomEvent {
+        direction: Coordinates::zero(),
+    });
 }

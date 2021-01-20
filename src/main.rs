@@ -1,6 +1,7 @@
 mod core;
 mod despawn;
 mod dungeon;
+mod images;
 mod player;
 mod rogue;
 mod tween;
