@@ -13,7 +13,7 @@ pub struct Grid {
 
 impl Grid {
     pub fn map_to_world(&self, coords: Coordinates) -> Vec3 {
-        (coords.to_vec() * self.cell_size).extend(0.0)
+        (coords.as_f32() * self.cell_size).extend(0.0)
     }
 }
 impl Default for Grid {
@@ -39,7 +39,7 @@ impl Coordinates {
         Coordinates { x: 0, y: 0 }
     }
 
-    pub fn to_vec(&self) -> Vec2 {
+    pub fn as_f32(&self) -> Vec2 {
         Vec2::new(self.x as f32, self.y as f32)
     }
 
