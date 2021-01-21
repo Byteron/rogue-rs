@@ -1,5 +1,4 @@
 mod core;
-mod despawn;
 mod dungeon;
 mod images;
 mod player;

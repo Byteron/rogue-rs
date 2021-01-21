@@ -2,7 +2,6 @@ use std::hash::Hash;
 
 use crate::{
     core::*,
-    despawn::{Despawn, DespawnPlugin},
     images::Images,
     tween::Tween,
 };
@@ -157,8 +156,7 @@ pub struct DungeonPlugin;
 
 impl Plugin for DungeonPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_plugin(DespawnPlugin)
-            .add_event::<ExitRoomEvent>()
+        app.add_event::<ExitRoomEvent>()
             .add_event::<EnterRoomEvent>()
             .add_system(on_exit_room.system())
             .add_system(on_enter_room.system());
@@ -173,7 +171,7 @@ fn on_exit_room(
     mut active_entities: Query<Entity, With<Active>>,
 ) {
     for event in event_reader.iter() {
-        prepare_despawn(commands, &mut active_entities);
+        despawn(commands, &mut active_entities);
         state.change_current_room(event.direction);
         events.send(EnterRoomEvent);
     }
@@ -329,8 +327,8 @@ fn spawn_enemy(
         .with(Tween::new(translation));
 }
 
-fn prepare_despawn(commands: &mut Commands, active_entities: &mut Query<Entity, With<Active>>) {
+fn despawn(commands: &mut Commands, active_entities: &mut Query<Entity, With<Active>>) {
     for entity in active_entities.iter() {
-        commands.insert_one(entity, Despawn);
+        commands.despawn(entity);
     }
 }
