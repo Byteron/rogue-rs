@@ -1,4 +1,12 @@
-use crate::{core::{Coordinates, Grid}, dungeon, dungeon::*, images::{Images, ImagesPlugin}, player, player::*, tween::{Tween, TweenPlugin}};
+use crate::{
+    core::{Coordinates, Grid},
+    dungeon,
+    dungeon::*,
+    images::{Images, ImagesPlugin},
+    player,
+    player::*,
+    tween::{Tween, TweenPlugin},
+};
 
 use bevy::prelude::*;
 
@@ -12,7 +20,8 @@ impl Plugin for Rogue {
             .add_plugin(DungeonPlugin)
             .add_resource(Grid::default())
             .add_startup_system(setup.system())
-            .add_system(player::input.system());
+            .add_system(player::movement.system())
+            .add_system(player::combat.system());
     }
 }
 

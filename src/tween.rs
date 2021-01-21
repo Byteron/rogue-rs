@@ -67,15 +67,15 @@ pub struct TweenPlugin;
 
 impl Plugin for TweenPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_system(tween.system());
+        app.add_system_to_stage(stage::PRE_UPDATE, tween.system());
     }
 }
 
-pub fn tween(mut query: Query<(&mut Transform, &Tween)>) {
-    for (mut transform, tween) in query.iter_mut() {
-        if tween.finished() {
-            continue;
+pub fn tween(time: Res<Time>, mut query: Query<(&mut Transform, &mut Tween)>) {
+    for (mut transform, mut tween) in query.iter_mut() {
+        if !tween.finished() {
+            tween.tick(time.delta_seconds());
+            transform.translation = tween.value();
         }
-        transform.translation = tween.value();
     }
 }
