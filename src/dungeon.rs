@@ -8,7 +8,7 @@ use crate::{
 use bevy::{prelude::*, render::camera::Camera, utils::HashMap};
 use rand::Rng;
 
-struct Active;
+struct Despawn;
 
 pub struct ExitRoomEvent {
     pub direction: Coordinates,
@@ -168,7 +168,7 @@ fn on_exit_room(
     mut events: ResMut<Events<EnterRoomEvent>>,
     mut event_reader: EventReader<ExitRoomEvent>,
     mut state: ResMut<GameState>,
-    mut active_entities: Query<Entity, With<Active>>,
+    mut active_entities: Query<Entity, With<Despawn>>,
 ) {
     for event in event_reader.iter() {
         despawn(commands, &mut active_entities);
@@ -297,7 +297,7 @@ fn spawn_tile(
             },
             ..Default::default()
         })
-        .with(Active)
+        .with(Despawn)
         .with(tile)
         .with(coords);
 }
@@ -321,13 +321,13 @@ fn spawn_enemy(
             },
             ..Default::default()
         })
-        .with(Active)
+        .with(Despawn)
         .with(enemy)
         .with(coords)
         .with(Tween::new(translation));
 }
 
-fn despawn(commands: &mut Commands, active_entities: &mut Query<Entity, With<Active>>) {
+fn despawn(commands: &mut Commands, active_entities: &mut Query<Entity, With<Despawn>>) {
     for entity in active_entities.iter() {
         commands.despawn(entity);
     }
