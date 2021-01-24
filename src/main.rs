@@ -1,6 +1,7 @@
-mod core;
 mod dungeon;
-mod images;
+mod rooms;
+mod enemies;
+mod grid;
 mod player;
 mod rogue;
 mod tween;

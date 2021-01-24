@@ -1,21 +1,58 @@
-use bevy::prelude::*;
-use dungeon::ExitRoomEvent;
+use bevy::{app::startup_stage, prelude::*};
 
 use crate::{
-    core::{Coordinates, Grid},
-    dungeon,
-    dungeon::{BoardObject, GameState, TileType},
+    rooms::{RoomExitedEvent, Rooms, TileType, Tiles},
+    grid::{Grid, Vec2i},
+    rogue::GameState,
     tween::{Tween, TweenMode},
 };
 
 pub struct Player;
 
-pub fn movement(
+pub struct PlayerPlugin;
+
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut AppBuilder) {
+        app.add_startup_system_to_stage(startup_stage::POST_STARTUP, setup.system())
+            .add_system(movement.system());
+    }
+}
+
+fn setup(
+    commands: &mut Commands,
+    assets: Res<AssetServer>,
+    grid: Res<Grid>,
+    state: Res<GameState>,
+    rooms: Res<Rooms>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    let room = rooms.get(&state.current_room).unwrap();
+
+    let translation = grid.map_to_world(room.center());
+
+    commands
+        .spawn(SpriteBundle {
+            material: materials.add(assets.load("images/player.png").into()),
+            transform: Transform::from_translation(translation),
+            sprite: Sprite {
+                size: grid.cell_size,
+                resize_mode: SpriteResizeMode::Manual,
+            },
+            ..Default::default()
+        })
+        .with(Player)
+        .with(Tween::new(translation))
+        .with(room.center());
+}
+
+fn movement(
     input: Res<Input<KeyCode>>,
     grid: Res<Grid>,
-    mut events: ResMut<Events<ExitRoomEvent>>,
-    mut state: ResMut<GameState>,
-    mut players: Query<(&mut Coordinates, &mut Tween), With<Player>>,
+    state: Res<GameState>,
+    rooms: Res<Rooms>,
+    tiles: Res<Tiles>,
+    mut events: ResMut<Events<RoomExitedEvent>>,
+    mut players: Query<(&mut Vec2i, &mut Tween), With<Player>>,
 ) {
     for (mut coords, mut tween) in players.iter_mut() {
         if !tween.finished() {
@@ -24,71 +61,38 @@ pub fn movement(
 
         let direction = get_input_direction(&input);
 
-        if direction == Coordinates::zero() {
+        if direction == Vec2i::zero() {
             continue;
         }
 
-        let room = state.get_current_room();
+        let room = rooms.get(&state.current_room).unwrap();
 
         let from_coords = *coords;
         let to_coords = *coords + direction;
 
         if room.is_exit(to_coords) {
-            events.send(ExitRoomEvent { direction });
+            events.send(RoomExitedEvent { direction });
+            tween.from = grid.map_to_world(from_coords);
+            tween.to = grid.map_to_world(to_coords);
+            tween.start(0.15, TweenMode::Move);
+
+            *coords = to_coords;
+        } else if let Some(tile) = tiles.get(&to_coords.extend(state.current_level)) {
+            if *tile == TileType::Wall {
+                continue;
+            }
 
             tween.from = grid.map_to_world(from_coords);
-            tween.to = grid.map_to_world(from_coords);
+            tween.to = grid.map_to_world(to_coords);
             tween.start(0.15, TweenMode::Move);
-        } else if room.objects.get(&to_coords) == None {
-            if let Some(tile) = room.tiles.get(&to_coords) {
-                if *tile == TileType::Floor {
-                    tween.from = grid.map_to_world(from_coords);
-                    tween.to = grid.map_to_world(to_coords);
-                    tween.start(0.15, TweenMode::Move);
 
-                    *coords = to_coords;
-                }
-            }
+            *coords = to_coords;
         }
     }
 }
 
-pub fn combat(
-    input: Res<Input<KeyCode>>,
-    grid: Res<Grid>,
-    mut state: ResMut<GameState>,
-    mut players: Query<(&Coordinates, &mut Tween), With<Player>>,
-) {
-    for (coords, mut tween) in players.iter_mut() {
-        if !tween.finished() {
-            continue;
-        }
-
-        let direction = get_input_direction(&input);
-
-        if direction == Coordinates::zero() {
-            continue;
-        }
-
-        let room = state.get_current_room();
-
-        let from_coords = *coords;
-        let to_coords = *coords + direction;
-
-        if let Some(bobs) = room.objects.get(&to_coords) {
-            for bob in bobs {
-                if let BoardObject::Enemy(enemy) = bob {
-                    tween.from = grid.map_to_world(from_coords);
-                    tween.to = grid.map_to_world(to_coords);
-                    tween.start(0.15, TweenMode::Attack);
-                }
-            }
-        }
-    }
-}
-
-fn get_input_direction(input: &Input<KeyCode>) -> Coordinates {
-    let mut direction = Coordinates::zero();
+fn get_input_direction(input: &Input<KeyCode>) -> Vec2i {
+    let mut direction = Vec2i::zero();
 
     if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {
         direction.y += 1;

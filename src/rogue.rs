@@ -1,64 +1,56 @@
-use crate::{
-    core::{Coordinates, Grid},
-    dungeon,
-    dungeon::*,
-    images::{Images, ImagesPlugin},
-    player,
-    player::*,
-    tween::{Tween, TweenPlugin},
-};
+use crate::{dungeon, enemies::EnemiesPlugin, grid::{Grid, GridPlugin, Vec2i, Vec3i}, player::PlayerPlugin, rooms::{self, RoomsPlugin, RoomExitedEvent, Rooms, Tiles}, tween::TweenPlugin};
 
 use bevy::prelude::*;
+
+pub struct GameState {
+    pub current_level: i32,
+    pub current_room: Vec3i,
+}
+
+impl Default for GameState {
+    fn default() -> Self {
+        GameState {
+            current_level: 0,
+            current_room: Vec3i::zero(),
+        }
+    }
+}
 
 pub struct Rogue;
 
 impl Plugin for Rogue {
     fn build(&self, app: &mut AppBuilder) {
         app.add_plugins(DefaultPlugins)
-            .add_plugin(ImagesPlugin)
             .add_plugin(TweenPlugin)
-            .add_plugin(DungeonPlugin)
-            .add_resource(Grid::default())
-            .add_startup_system(setup.system())
-            .add_system(player::movement.system())
-            .add_system(player::combat.system());
+            .add_plugin(GridPlugin)
+            .add_plugin(RoomsPlugin)
+            .add_plugin(EnemiesPlugin)
+            .add_plugin(PlayerPlugin)
+            .add_resource(GameState::default())
+            .add_startup_system(setup.system());
     }
 }
 
 fn setup(
     commands: &mut Commands,
     grid: Res<Grid>,
-    images: Res<Images>,
-    mut events: ResMut<Events<ExitRoomEvent>>,
+    mut state: ResMut<GameState>,
+    mut rooms: ResMut<Rooms>,
+    mut tiles: ResMut<Tiles>,
+    mut events: ResMut<Events<RoomExitedEvent>>,
 ) {
-    let mut state = dungeon::generate();
+    let start = dungeon::generate(&mut rooms, &mut tiles);
+    let room = rooms.get(&start).unwrap();
 
-    let room = state.get_current_room();
-
-    let center = grid.map_to_world(room.center());
+    let translation = grid.map_to_world(room.center());
 
     commands.spawn(Camera2dBundle {
-        transform: Transform::from_translation(center),
+        transform: Transform::from_translation(translation),
         ..Default::default()
     });
 
-    commands
-        .spawn(SpriteBundle {
-            material: images.get_player(),
-            transform: Transform::from_translation(center),
-            sprite: Sprite {
-                size: grid.cell_size,
-                resize_mode: SpriteResizeMode::Manual,
-            },
-            ..Default::default()
-        })
-        .with(Player)
-        .with(Tween::new(center))
-        .with(room.center());
-
-    commands.insert_resource(state);
-
-    events.send(ExitRoomEvent {
-        direction: Coordinates::zero(),
+    state.current_room = start;
+    events.send(RoomExitedEvent {
+        direction: Vec2i::zero(),
     });
 }
