@@ -1,13 +1,9 @@
 use std::hash::Hash;
 
-use bevy::{app::startup_stage, prelude::*, render::camera::Camera, utils::HashMap};
+use bevy::{app::startup_stage, prelude::*, utils::HashMap};
 use rand::Rng;
 
-use crate::{
-    enemies::{Enemies, EnemyImages, EnemyType},
-    grid::{Grid, Vec2i, Vec3i},
-    rogue::GameState,
-};
+use crate::grid::{Vec2i, Vec3i};
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy)]
 pub enum TileType {
