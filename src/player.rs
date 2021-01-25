@@ -1,9 +1,11 @@
 use bevy::{app::startup_stage, prelude::*};
 
 use crate::{
-    rooms::{RoomExitedEvent, Rooms, TileType, Tiles},
+    dungeon::RoomExitedEvent,
+    enemies::Enemies,
     grid::{Grid, Vec2i},
     rogue::GameState,
+    rooms::{Rooms, TileType, Tiles},
     tween::{Tween, TweenMode},
 };
 
@@ -14,7 +16,8 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_startup_system_to_stage(startup_stage::POST_STARTUP, setup.system())
-            .add_system(movement.system());
+            .add_system(movement.system())
+            .add_system(combat.system());
     }
 }
 
@@ -26,7 +29,7 @@ fn setup(
     rooms: Res<Rooms>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let room = rooms.get(&state.current_room).unwrap();
+    let room = rooms.0.get(&state.current_room).unwrap();
 
     let translation = grid.map_to_world(room.center());
 
@@ -51,6 +54,7 @@ fn movement(
     state: Res<GameState>,
     rooms: Res<Rooms>,
     tiles: Res<Tiles>,
+    enemies: Res<Enemies>,
     mut events: ResMut<Events<RoomExitedEvent>>,
     mut players: Query<(&mut Vec2i, &mut Tween), With<Player>>,
 ) {
@@ -65,7 +69,7 @@ fn movement(
             continue;
         }
 
-        let room = rooms.get(&state.current_room).unwrap();
+        let room = rooms.0.get(&state.current_room).unwrap();
 
         let from_coords = *coords;
         let to_coords = *coords + direction;
@@ -77,7 +81,8 @@ fn movement(
             tween.start(0.15, TweenMode::Move);
 
             *coords = to_coords;
-        } else if let Some(tile) = tiles.get(&to_coords.extend(state.current_level)) {
+        } else if let Some(_) = enemies.0.get(&to_coords.extend(state.current_level)) {
+        } else if let Some(tile) = tiles.0.get(&to_coords.extend(state.current_level)) {
             if *tile == TileType::Wall {
                 continue;
             }
@@ -87,6 +92,35 @@ fn movement(
             tween.start(0.15, TweenMode::Move);
 
             *coords = to_coords;
+        }
+    }
+}
+
+fn combat(
+    input: Res<Input<KeyCode>>,
+    grid: Res<Grid>,
+    state: Res<GameState>,
+    enemies: Res<Enemies>,
+    mut players: Query<(&mut Vec2i, &mut Tween), With<Player>>,
+) {
+    for (coords, mut tween) in players.iter_mut() {
+        if !tween.finished() {
+            continue;
+        }
+
+        let direction = get_input_direction(&input);
+
+        if direction == Vec2i::zero() {
+            continue;
+        }
+
+        let from_coords = *coords;
+        let to_coords = *coords + direction;
+
+        if let Some(_) = enemies.0.get(&to_coords.extend(state.current_level)) {
+            tween.from = grid.map_to_world(from_coords);
+            tween.to = grid.map_to_world(to_coords);
+            tween.start(0.15, TweenMode::Attack);
         }
     }
 }

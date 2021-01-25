@@ -1,4 +1,11 @@
-use crate::{dungeon, enemies::EnemiesPlugin, grid::{Grid, GridPlugin, Vec2i, Vec3i}, player::PlayerPlugin, rooms::{self, RoomsPlugin, RoomExitedEvent, Rooms, Tiles}, tween::TweenPlugin};
+use crate::{
+    dungeon::{self, DungeonPlugin, RoomExitedEvent},
+    enemies::{Enemies, EnemiesPlugin},
+    grid::{Grid, GridPlugin, Vec2i, Vec3i},
+    player::PlayerPlugin,
+    rooms::{Rooms, RoomsPlugin, Tiles},
+    tween::TweenPlugin,
+};
 
 use bevy::prelude::*;
 
@@ -26,6 +33,7 @@ impl Plugin for Rogue {
             .add_plugin(RoomsPlugin)
             .add_plugin(EnemiesPlugin)
             .add_plugin(PlayerPlugin)
+            .add_plugin(DungeonPlugin)
             .add_resource(GameState::default())
             .add_startup_system(setup.system());
     }
@@ -37,10 +45,11 @@ fn setup(
     mut state: ResMut<GameState>,
     mut rooms: ResMut<Rooms>,
     mut tiles: ResMut<Tiles>,
+    mut enemies: ResMut<Enemies>,
     mut events: ResMut<Events<RoomExitedEvent>>,
 ) {
-    let start = dungeon::generate(&mut rooms, &mut tiles);
-    let room = rooms.get(&start).unwrap();
+    let start = dungeon::generate(&mut rooms, &mut tiles, &mut enemies);
+    let room = rooms.0.get(&start).unwrap();
 
     let translation = grid.map_to_world(room.center());
 
