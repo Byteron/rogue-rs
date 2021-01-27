@@ -58,6 +58,13 @@ impl Room {
                 && (coords.x == self.position.x - 1 || coords.x == self.end().x)
     }
 
+    pub fn is_entrance(&self, coords: Vec2i) -> bool {
+        coords.x == self.center().x
+            && (coords.y == self.position.y + 1 || coords.y == self.last().y - 1)
+            || coords.y == self.center().y
+                && (coords.x == self.position.x + 1 || coords.x == self.last().x - 1)
+    }
+
     pub fn is_border(&self, coords: Vec2i) -> bool {
         coords.x == self.position.x
             || coords.y == self.position.y
@@ -73,6 +80,8 @@ pub fn create_room(tiles: &mut Tiles, level: i32, position: Vec2i, size: Vec2i) 
 
     for coords in room.coords().iter_mut() {
         if room.is_door(*coords) {
+            tiles.0.insert(coords.extend(level), TileType::Floor);
+        } else if room.is_entrance(*coords) {
             tiles.0.insert(coords.extend(level), TileType::Floor);
         } else if room.is_border(*coords) {
             tiles.0.insert(coords.extend(level), TileType::Wall);
