@@ -120,14 +120,16 @@ fn death(
     query: Query<(Entity, &Health, &View, &Vec3i), With<EnemyType>>,
 ) {
     for (entity, health, view, coords) in query.iter() {
-        if health.is_dead() {
-            commands.despawn(entity);
-
-            if let Some(entity) = view.0 {
-                commands.despawn(entity);
-            }
-
-            enemies.0.remove(coords);
+        if !health.is_dead() {
+            continue;
         }
+
+        commands.despawn(entity);
+
+        if let Some(entity) = view.0 {
+            commands.despawn(entity);
+        }
+
+        enemies.0.remove(coords);
     }
 }
