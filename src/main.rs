@@ -1,3 +1,4 @@
+mod combat;
 mod dungeon;
 mod enemies;
 mod grid;

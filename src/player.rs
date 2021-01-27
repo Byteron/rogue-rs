@@ -1,6 +1,7 @@
 use bevy::{app::startup_stage, prelude::*};
 
 use crate::{
+    combat::{Health, Strength},
     dungeon::RoomExitedEvent,
     enemies::Enemies,
     grid::{Grid, Vec2i},
@@ -16,8 +17,7 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_startup_system_to_stage(startup_stage::POST_STARTUP, setup.system())
-            .add_system(movement.system())
-            .add_system(combat.system());
+            .add_system(movement.system());
     }
 }
 
@@ -44,6 +44,8 @@ fn setup(
             ..Default::default()
         })
         .with(Player)
+        .with(Health::new(30))
+        .with(Strength(8))
         .with(Tween::new(translation))
         .with(room.center());
 }
@@ -96,36 +98,7 @@ fn movement(
     }
 }
 
-fn combat(
-    input: Res<Input<KeyCode>>,
-    grid: Res<Grid>,
-    state: Res<GameState>,
-    enemies: Res<Enemies>,
-    mut players: Query<(&mut Vec2i, &mut Tween), With<Player>>,
-) {
-    for (coords, mut tween) in players.iter_mut() {
-        if !tween.finished() {
-            continue;
-        }
-
-        let direction = get_input_direction(&input);
-
-        if direction == Vec2i::zero() {
-            continue;
-        }
-
-        let from_coords = *coords;
-        let to_coords = *coords + direction;
-
-        if let Some(_) = enemies.0.get(&to_coords.extend(state.current_level)) {
-            tween.from = grid.map_to_world(from_coords);
-            tween.to = grid.map_to_world(to_coords);
-            tween.start(0.15, TweenMode::Attack);
-        }
-    }
-}
-
-fn get_input_direction(input: &Input<KeyCode>) -> Vec2i {
+pub fn get_input_direction(input: &Input<KeyCode>) -> Vec2i {
     let mut direction = Vec2i::zero();
 
     if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {

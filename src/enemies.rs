@@ -9,9 +9,11 @@ pub enum EnemyType {
     Goblin,
 }
 
+pub struct View(pub Option<Entity>);
+
 pub struct EnemyImages(pub HashMap<EnemyType, Handle<ColorMaterial>>);
 
-pub struct Enemies(pub HashMap<Vec3i, EnemyType>);
+pub struct Enemies(pub HashMap<Vec3i, Entity>);
 
 pub struct EnemiesPlugin;
 

@@ -1,4 +1,5 @@
 use crate::{
+    combat::CombatPlugin,
     dungeon::{self, DungeonPlugin, RoomExitedEvent},
     enemies::{Enemies, EnemiesPlugin},
     grid::{Grid, GridPlugin, Vec2i, Vec3i},
@@ -34,6 +35,7 @@ impl Plugin for Rogue {
             .add_plugin(EnemiesPlugin)
             .add_plugin(PlayerPlugin)
             .add_plugin(DungeonPlugin)
+            .add_plugin(CombatPlugin)
             .add_resource(GameState::default())
             .add_startup_system(setup.system());
     }
@@ -48,7 +50,7 @@ fn setup(
     mut enemies: ResMut<Enemies>,
     mut events: ResMut<Events<RoomExitedEvent>>,
 ) {
-    let start = dungeon::generate(&mut rooms, &mut tiles, &mut enemies);
+    let start = dungeon::generate(commands, &mut rooms, &mut tiles, &mut enemies);
     let room = rooms.0.get(&start).unwrap();
 
     let translation = grid.map_to_world(room.center());

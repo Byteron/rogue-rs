@@ -3,7 +3,8 @@ use bevy::{prelude::*, render::camera::Camera};
 use rand::Rng;
 
 use crate::{
-    enemies::{Enemies, EnemyImages, EnemyType},
+    combat::{Health, Strength},
+    enemies::{Enemies, EnemyImages, EnemyType, View},
     grid::{Grid, Vec2i, Vec3i},
     rogue::GameState,
     rooms::{self, Room, Rooms, TileImages, TileType, Tiles},
@@ -17,7 +18,12 @@ pub struct RoomExitedEvent {
 
 pub struct RoomEnteredEvent;
 
-pub fn generate(rooms: &mut Rooms, tiles: &mut Tiles, enemies: &mut Enemies) -> Vec3i {
+pub fn generate(
+    commands: &mut Commands,
+    rooms: &mut Rooms,
+    tiles: &mut Tiles,
+    enemies: &mut Enemies,
+) -> Vec3i {
     let room_size = Vec2i::new(19, 11);
     let level_size = Vec2i::new(10, 10);
 
@@ -39,9 +45,16 @@ pub fn generate(rooms: &mut Rooms, tiles: &mut Tiles, enemies: &mut Enemies) -> 
             let tile = tiles.0.get(&coords.extend(room_coords.z)).unwrap();
             if *tile == TileType::Floor {
                 if rng.gen_bool(0.01) && !room.is_door(coords) {
-                    enemies
-                        .0
-                        .insert(coords.extend(room_coords.z), EnemyType::Goblin);
+                    let enemy = commands
+                        .spawn(())
+                        .with(Health::new(15))
+                        .with(Strength(4))
+                        .with(EnemyType::Goblin)
+                        .with(coords.extend(room_coords.z))
+                        .current_entity()
+                        .unwrap();
+
+                    enemies.0.insert(coords.extend(room_coords.z), enemy);
                 }
             }
         }
@@ -91,6 +104,7 @@ fn on_room_entered(
     state: Res<GameState>,
     mut events: EventReader<RoomEnteredEvent>,
     mut cameras: Query<&mut Transform, With<Camera>>,
+    enemy_query: Query<&EnemyType>,
 ) {
     for _ in events.iter() {
         let mut camera_transform = cameras.iter_mut().next().unwrap();
@@ -105,6 +119,7 @@ fn on_room_entered(
             &enemies,
             state.current_level,
             &room,
+            &enemy_query,
         );
         camera_transform.translation = grid.map_to_world(room.center());
     }
@@ -119,6 +134,7 @@ pub fn spawn_room(
     enemies: &Enemies,
     level: i32,
     room: &Room,
+    enemy_query: &Query<&EnemyType>,
 ) {
     for coords in room.coords() {
         let tile = tiles.0.get(&coords.extend(level)).unwrap();
@@ -130,13 +146,16 @@ pub fn spawn_room(
             tile_images.0.get(tile).unwrap().clone(),
         );
 
-        if let Some(enemy) = enemies.0.get(&coords.extend(level)) {
-            spawn_enemy(
-                commands,
-                grid,
-                coords,
-                enemy_images.0.get(enemy).unwrap().clone(),
-            )
+        if let Some(entity) = enemies.0.get(&coords.extend(level)) {
+            if let Ok(enemy) = enemy_query.get(*entity) {
+                spawn_enemy(
+                    commands,
+                    grid,
+                    *entity,
+                    coords,
+                    enemy_images.0.get(enemy).unwrap().clone(),
+                )
+            }
         }
     }
 }
@@ -166,12 +185,13 @@ pub fn spawn_tile(
 pub fn spawn_enemy(
     commands: &mut Commands,
     grid: &Grid,
+    entity: Entity,
     coords: Vec2i,
     material: Handle<ColorMaterial>,
 ) {
     let translation = grid.map_to_world(coords);
 
-    commands
+    let view_entity = commands
         .spawn(SpriteBundle {
             material,
             transform: Transform::from_translation(translation - Vec3::new(0.0, 0.0, 0.1)),
@@ -183,7 +203,11 @@ pub fn spawn_enemy(
         })
         .with(EnemyType::Goblin)
         .with(coords)
-        .with(Despawn);
+        .with(Despawn)
+        .current_entity()
+        .unwrap();
+
+    commands.insert_one(entity, View(Some(view_entity)));
 }
 
 fn despawn(commands: &mut Commands, active_entities: &mut Query<Entity, With<Despawn>>) {
