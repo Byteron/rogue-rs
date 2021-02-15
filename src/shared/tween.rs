@@ -64,7 +64,6 @@ impl Default for Tween {
 }
 
 pub struct TweenPlugin;
-
 impl Plugin for TweenPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_system_to_stage(stage::PRE_UPDATE, tween.system());

@@ -27,11 +27,27 @@ impl Vec3i {
             y: self.y,
         }
     }
+
+    pub fn as_f32(&self) -> Vec3 {
+        Vec3::new(self.x as f32, self.y as f32, self.z as f32)
+    }
 }
 
 impl Default for Vec3i {
     fn default() -> Self {
         Vec3i { x: 0, y: 0, z: 0 }
+    }
+}
+
+impl Mul<Vec3i> for Vec3i {
+    type Output = Vec3i;
+
+    fn mul(self, rhs: Vec3i) -> Self::Output {
+        Vec3i {
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+            z: self.z * rhs.z,
+        }
     }
 }
 
@@ -115,30 +131,5 @@ impl Div<Vec2i> for Vec2i {
             x: self.x / rhs.x,
             y: self.y / rhs.y,
         }
-    }
-}
-
-pub struct Grid {
-    pub cell_size: Vec2,
-}
-
-impl Grid {
-    pub fn map_to_world(&self, coords: Vec2i) -> Vec3 {
-        (coords.as_f32() * self.cell_size).extend(0.0)
-    }
-}
-
-impl Default for Grid {
-    fn default() -> Self {
-        Grid {
-            cell_size: Vec2::new(64.0, 64.0),
-        }
-    }
-}
-
-pub struct GridPlugin;
-impl Plugin for GridPlugin {
-    fn build(&self, app: &mut AppBuilder) {
-        app.add_resource(Grid::default());
     }
 }

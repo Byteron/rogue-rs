@@ -1,9 +1,6 @@
-use std::hash::Hash;
-
 use bevy::{app::startup_stage, prelude::*, utils::HashMap};
-use rand::Rng;
 
-use crate::grid::{Vec2i, Vec3i};
+use crate::shared::math::{Vec2i, Vec3i};
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy)]
 pub enum TileType {
@@ -13,9 +10,9 @@ pub enum TileType {
 
 pub struct TileImages(pub HashMap<TileType, Handle<ColorMaterial>>);
 
-pub struct Tiles(pub HashMap<Vec3i, TileType>);
+pub struct Tiles(pub HashMap<Vec3i, Entity>);
 
-pub struct Rooms(pub HashMap<Vec3i, Room>);
+pub struct Rooms(pub HashMap<Vec3i, Entity>);
 
 pub struct Room {
     pub position: Vec2i,
@@ -73,35 +70,12 @@ impl Room {
     }
 }
 
-pub fn create_room(tiles: &mut Tiles, level: i32, position: Vec2i, size: Vec2i) -> Room {
-    let room = Room { position, size };
-
-    let mut rng = rand::thread_rng();
-
-    for coords in room.coords().iter_mut() {
-        if room.is_door(*coords) {
-            tiles.0.insert(coords.extend(level), TileType::Floor);
-        } else if room.is_entrance(*coords) {
-            tiles.0.insert(coords.extend(level), TileType::Floor);
-        } else if room.is_border(*coords) {
-            tiles.0.insert(coords.extend(level), TileType::Wall);
-        } else if rng.gen_bool(0.1) {
-            tiles.0.insert(coords.extend(level), TileType::Wall);
-        } else {
-            tiles.0.insert(coords.extend(level), TileType::Floor);
-        }
-    }
-
-    room
-}
-
-pub struct RoomsPlugin;
-
-impl Plugin for RoomsPlugin {
+pub struct RoomPlugin;
+impl Plugin for RoomPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_resource(TileImages(HashMap::default()))
-            .add_resource(Rooms(HashMap::default()))
-            .add_resource(Tiles(HashMap::default()))
+        app.insert_resource(TileImages(HashMap::default()))
+            .insert_resource(Rooms(HashMap::default()))
+            .insert_resource(Tiles(HashMap::default()))
             .add_startup_system_to_stage(startup_stage::PRE_STARTUP, setup.system());
     }
 }
