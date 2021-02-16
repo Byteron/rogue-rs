@@ -14,6 +14,7 @@ use self::{
     bob::{Coords, Layer},
     grid::Grid,
     player::Player,
+    tile::Tile,
     view::{View, ViewAnchor},
 };
 
@@ -139,7 +140,7 @@ fn spawn_tile(commands: &mut Commands, grid: &Grid, images: &Images, coords: Coo
     // Tile's View
     let view = create_view(commands, &grid, images, Image::Floor);
 
-    // Actual Player Entity
+    // Actual Tile Entity
     commands
         .spawn(BoardObjectBundle {
             view_anchor: ViewAnchor(Some(view)),
@@ -147,6 +148,7 @@ fn spawn_tile(commands: &mut Commands, grid: &Grid, images: &Images, coords: Coo
             layer: Layer(0),
             ..Default::default()
         })
+        .with(Tile)
         .with(StateCleanup);
 }
 
