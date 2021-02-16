@@ -1,7 +1,5 @@
 use crate::core::math::Vec2i;
 
-pub struct Coords(pub Vec2i);
-
 pub struct Grid {
     pub cell_size: Vec2i,
 }

@@ -2,7 +2,8 @@ use bevy::prelude::*;
 
 use crate::core::math::Vec2i;
 
-use super::{actor::StepTimer, grid::Coords};
+use super::{actor::StepTimer, bob::Coords};
+
 pub struct Player;
 
 pub fn movement(
