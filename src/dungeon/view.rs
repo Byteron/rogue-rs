@@ -14,7 +14,6 @@ pub fn sync_views(
         if let Some(entity) = anchor.0 {
             if let Ok(mut view_transform) = views.get_mut(entity) {
                 view_transform.translation = position.0.extend(position.1).as_f32();
-                println!("Sync!");
             }
         }
     }

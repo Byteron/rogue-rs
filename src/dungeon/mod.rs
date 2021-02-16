@@ -5,10 +5,6 @@ mod player;
 mod tile;
 mod view;
 
-use crate::core::{math::Vec2i, AppState, APPSTATES};
-use bevy::{prelude::*, utils::HashMap};
-use bob::BoardObjectBundle;
-
 use self::{
     actor::ActorBundle,
     bob::{Coords, Layer},
@@ -17,57 +13,19 @@ use self::{
     tile::Tile,
     view::{View, ViewAnchor},
 };
+use crate::core::{
+    images::{Image, Images},
+    math::Vec2i,
+    AppState, APPSTATES,
+};
+use bevy::prelude::*;
+use bob::BoardObjectBundle;
 
 const PLAYER_MOVES: &str = "PlayerInput";
 const ACTORS_MOVED: &str = "PlayerMoved";
 
 struct StateCleanup;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-enum Image {
-    Floor,
-    Wall,
-    Human,
-    Goblin,
-}
-
-struct Images {
-    images: HashMap<Image, Handle<ColorMaterial>>,
-}
-
-impl Images {
-    pub fn get(&self, image: Image) -> Handle<ColorMaterial> {
-        self.images.get(&image).unwrap().clone()
-    }
-}
-
-impl FromResources for Images {
-    fn from_resources(resources: &Resources) -> Self {
-        let mut materials = resources.get_mut::<Assets<ColorMaterial>>().unwrap();
-        let assets = resources.get_mut::<AssetServer>().unwrap();
-
-        let mut images: HashMap<Image, Handle<ColorMaterial>> = HashMap::default();
-
-        images.insert(
-            Image::Human,
-            materials.add(assets.load("images/human.png").into()),
-        );
-        images.insert(
-            Image::Goblin,
-            materials.add(assets.load("images/goblin.png").into()),
-        );
-        images.insert(
-            Image::Wall,
-            materials.add(assets.load("images/wall.png").into()),
-        );
-        images.insert(
-            Image::Floor,
-            materials.add(assets.load("images/floor.png").into()),
-        );
-
-        Images { images }
-    }
-}
 pub struct DungeonPlugin;
 
 impl Plugin for DungeonPlugin {

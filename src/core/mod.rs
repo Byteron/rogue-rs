@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+pub mod images;
 pub mod math;
 
 pub const APPSTATES: &str = "AppStates";
