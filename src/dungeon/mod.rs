@@ -1,16 +1,21 @@
 mod actor;
 mod bob;
 mod grid;
+mod images;
 mod player;
 mod tile;
 mod view;
-mod images;
 
-use self::{actor::ActorBundle, bob::{Coords, Layer}, grid::Grid, images::{Image, Images}, player::Player, tile::Tile, view::{View, ViewAnchor}};
-use crate::core::{
-    math::Vec2i,
-    AppState, APPSTATES,
+use self::{
+    actor::ActorBundle,
+    bob::{Coords, Layer},
+    grid::Grid,
+    images::{Image, Images},
+    player::Player,
+    tile::Tile,
+    view::{View, ViewAnchor},
 };
+use crate::core::{math::Vec2i, AppState, APPSTATES};
 use bevy::prelude::*;
 use bob::BoardObjectBundle;
 
