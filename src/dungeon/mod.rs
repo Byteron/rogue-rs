@@ -4,17 +4,10 @@ mod grid;
 mod player;
 mod tile;
 mod view;
+mod images;
 
-use self::{
-    actor::ActorBundle,
-    bob::{Coords, Layer},
-    grid::Grid,
-    player::Player,
-    tile::Tile,
-    view::{View, ViewAnchor},
-};
+use self::{actor::ActorBundle, bob::{Coords, Layer}, grid::Grid, images::{Image, Images}, player::Player, tile::Tile, view::{View, ViewAnchor}};
 use crate::core::{
-    images::{Image, Images},
     math::Vec2i,
     AppState, APPSTATES,
 };
