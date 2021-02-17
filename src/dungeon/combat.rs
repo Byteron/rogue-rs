@@ -110,7 +110,7 @@ pub fn death(commands: &mut Commands, query: Query<(Entity, &ViewAnchor, &Health
         }
 
         commands.despawn(entity);
-        
+
         println!("{:?} Died", entity);
     }
 }

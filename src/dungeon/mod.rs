@@ -1,4 +1,5 @@
 mod actor;
+mod ai;
 mod bob;
 mod combat;
 mod grid;
@@ -20,12 +21,14 @@ use self::{
     view::{View, ViewAnchor},
 };
 use crate::core::{math::Vec2i, AppState, APPSTATES};
+use ai::{AiTickEvent, GoblinAi};
 use bevy::prelude::*;
 use bob::BoardObjectBundle;
 use rand::Rng;
 
 const TIMER_TICK: &str = "TimerTick";
 const PLAYER_INPUT: &str = "PlayerInput";
+const AI: &str = "Ai";
 const COMBAT: &str = "Combat";
 const MOVEMENT: &str = "Movement";
 const MOVED: &str = "PlayerMoved";
@@ -36,7 +39,8 @@ pub struct DungeonPlugin;
 
 impl Plugin for DungeonPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.insert_resource(Grid::new(64, 64))
+        app.add_event::<AiTickEvent>()
+            .insert_resource(Grid::new(64, 64))
             .init_resource::<Images>()
             .on_state_enter(APPSTATES, AppState::Dungeon, setup.system())
             .on_state_update(
@@ -48,12 +52,27 @@ impl Plugin for DungeonPlugin {
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
-                player::movement_input.system().label(PLAYER_INPUT).after(TIMER_TICK),
+                player::movement_input
+                    .system()
+                    .label(PLAYER_INPUT)
+                    .after(TIMER_TICK),
             )
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
-                player::combat_input.system().after(TIMER_TICK).before(PLAYER_INPUT),
+                player::combat_input
+                    .system()
+                    .after(TIMER_TICK)
+                    .before(PLAYER_INPUT),
+            )
+            // AI
+            .on_state_update(
+                APPSTATES,
+                AppState::Dungeon,
+                ai::goblin_ai_movement
+                    .system()
+                    .label(AI)
+                    .after(PLAYER_INPUT),
             )
             // Combat
             .on_state_update(
@@ -106,8 +125,8 @@ fn setup(commands: &mut Commands, grid: Res<Grid>, images: Res<Images>) {
         }
     }
 
-    for y in -10..=10 {
-        for x in -10..=10 {
+    for y in -9..=9 {
+        for x in -9..=9 {
             let mut rng = rand::thread_rng();
             if rng.gen_bool(0.1) {
                 spawn_enemy(commands, &grid, &images, Coords(Vec2i::new(x, y)));
@@ -141,7 +160,10 @@ fn spawn_tile(commands: &mut Commands, grid: &Grid, images: &Images, coords: Coo
     // Tile's View
     let view: Entity;
 
-    if rng.gen_bool(0.1) {
+    if coords.0.x == 10 || coords.0.y == 10 || coords.0.x == -10 || coords.0.y == -10 {
+        view = create_view(commands, &grid, images, Image::Wall);
+        solid = true;
+    } else if rng.gen_bool(0.1) {
         view = create_view(commands, &grid, images, Image::Wall);
         solid = true;
     } else {
@@ -177,6 +199,7 @@ fn spawn_enemy(commands: &mut Commands, grid: &Grid, images: &Images, coords: Co
         .with_bundle(ActorBundle::default())
         .with_bundle(CombatBundle::default())
         .with_bundle(KinematicBodyBundle::solid())
+        .with(GoblinAi)
         .with(StateCleanup);
 }
 

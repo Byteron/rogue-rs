@@ -2,12 +2,18 @@ use bevy::prelude::*;
 
 use crate::core::math::Vec2i;
 
-use super::{actor::{ActionTimer, Facing}, combat::Attack, physics::Step};
+use super::{
+    actor::{ActionTimer, Facing},
+    ai::AiTickEvent,
+    combat::Attack,
+    physics::Step,
+};
 
 pub struct Player;
 
 pub fn movement_input(
     input: Res<Input<KeyCode>>,
+    mut events: ResMut<Events<AiTickEvent>>,
     mut query: Query<(&mut Step, &mut ActionTimer, &mut Facing), With<Player>>,
 ) {
     for (mut step, mut timer, mut facing) in query.iter_mut() {
@@ -20,6 +26,7 @@ pub fn movement_input(
         if facing.direction == direction {
             step.direction = direction;
             timer.0.reset();
+            events.send(AiTickEvent);
         } else {
             facing.direction = direction;
             timer.0.reset();
@@ -30,6 +37,7 @@ pub fn movement_input(
 
 pub fn combat_input(
     input: Res<Input<KeyCode>>,
+    mut events: ResMut<Events<AiTickEvent>>,
     mut query: Query<(&mut Attack, &mut ActionTimer, &Facing), With<Player>>,
 ) {
     for (mut attack, mut timer, facing) in query.iter_mut() {
@@ -40,6 +48,7 @@ pub fn combat_input(
         if input.pressed(KeyCode::F) {
             attack.direction = facing.direction;
             timer.0.reset();
+            events.send(AiTickEvent)
         }
     }
 }
