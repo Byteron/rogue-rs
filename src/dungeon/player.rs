@@ -15,7 +15,6 @@ pub fn movement(input: Res<Input<KeyCode>>, mut players: Query<&mut Step, With<P
         }
 
         step.direction = direction;
-        println!("Step! {:?}", step.direction);
     }
 }
 

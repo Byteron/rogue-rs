@@ -42,11 +42,6 @@ impl Plugin for DungeonPlugin {
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
-                physics::step_timer_tick.system().before(PHYSICS_COLLISION),
-            )
-            .on_state_update(
-                APPSTATES,
-                AppState::Dungeon,
                 physics::collision
                     .system()
                     .label(PHYSICS_COLLISION)

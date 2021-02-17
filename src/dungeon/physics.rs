@@ -69,12 +69,6 @@ impl KinematicBodyBundle {
     }
 }
 
-pub fn step_timer_tick(time: Res<Time>, mut query: Query<&mut StepTimer>) {
-    for mut timer in query.iter_mut() {
-        timer.0.tick(time.delta_seconds());
-    }
-}
-
 pub fn collision(
     mut movers: Query<(&mut Step, &Coords, &Body), Mutated<Step>>,
     bodies: Query<(&Coords, &Body)>,
@@ -95,8 +89,10 @@ pub fn collision(
     }
 }
 
-pub fn step(mut query: Query<(&Step, &mut StepTimer, &mut Coords), With<Body>>) {
+pub fn step(time: Res<Time>, mut query: Query<(&Step, &mut StepTimer, &mut Coords), With<Body>>) {
     for (step, mut timer, mut coords) in query.iter_mut() {
+        timer.0.tick(time.delta_seconds());
+
         if timer.0.finished() && step.direction != Vec2i::zero() {
             coords.0 += step.direction;
             timer.0.reset();
