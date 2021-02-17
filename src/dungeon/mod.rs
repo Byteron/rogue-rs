@@ -1,4 +1,6 @@
+mod actor;
 mod bob;
+mod combat;
 mod grid;
 mod images;
 mod physics;
@@ -7,7 +9,9 @@ mod tile;
 mod view;
 
 use self::{
+    actor::ActorBundle,
     bob::{Coords, Layer},
+    combat::CombatBundle,
     grid::Grid,
     images::{Image, Images},
     physics::{Body, KinematicBodyBundle},
@@ -20,10 +24,12 @@ use bevy::prelude::*;
 use bob::BoardObjectBundle;
 use rand::Rng;
 
-const PLAYER_MOVES: &str = "PlayerInput";
-const ACTORS_MOVED: &str = "PlayerMoved";
-const PHYSICS_COLLISION: &str = "PhysicsCollision";
-const PHYSICS_STEP: &str = "PhysicsStep";
+const PLAYER_INPUT: &str = "PlayerInput";
+const APPROACH_COMBAT: &str = "ApproacCombat";
+const APPROACH_MOVEMENT: &str = "ApproachMovement";
+const COMBAT: &str = "Combat";
+const MOVEMENT: &str = "Movement";
+const MOVED: &str = "PlayerMoved";
 
 struct StateCleanup;
 
@@ -37,41 +43,51 @@ impl Plugin for DungeonPlugin {
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
-                player::movement.system().label(PLAYER_MOVES),
+                player::movement.system().label(PLAYER_INPUT),
             )
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
-                physics::collision
+                combat::approach
                     .system()
-                    .label(PHYSICS_COLLISION)
-                    .after(PLAYER_MOVES),
+                    .label(APPROACH_COMBAT)
+                    .after(PLAYER_INPUT),
             )
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
-                physics::step
+                combat::attack.system().label(COMBAT).after(APPROACH_COMBAT),
+            )
+            .on_state_update(
+                APPSTATES,
+                AppState::Dungeon,
+                combat::death.system().after(COMBAT),
+            )
+            .on_state_update(
+                APPSTATES,
+                AppState::Dungeon,
+                physics::approach
                     .system()
-                    .label(PHYSICS_STEP)
-                    .after(PHYSICS_COLLISION),
+                    .label(APPROACH_MOVEMENT)
+                    .after(COMBAT),
             )
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
-                physics::cleanup.system().after(PHYSICS_STEP),
-            )
-            .on_state_update(
-                APPSTATES,
-                AppState::Dungeon,
-                bob::update_position
+                physics::movement
                     .system()
-                    .label(ACTORS_MOVED)
-                    .after(PHYSICS_STEP),
+                    .label(MOVEMENT)
+                    .after(APPROACH_MOVEMENT),
             )
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
-                view::sync_views.system().after(ACTORS_MOVED),
+                bob::update_position.system().label(MOVED).after(MOVEMENT),
+            )
+            .on_state_update(
+                APPSTATES,
+                AppState::Dungeon,
+                view::sync_views.system().after(MOVED),
             )
             .on_state_exit(
                 APPSTATES,
@@ -93,6 +109,15 @@ fn setup(commands: &mut Commands, grid: Res<Grid>, images: Res<Images>) {
             spawn_tile(commands, &grid, &images, Coords(Vec2i::new(x, y)));
         }
     }
+
+    for y in -10..=10 {
+        for x in -10..=10 {
+            let mut rng = rand::thread_rng();
+            if rng.gen_bool(0.1) {
+                spawn_enemy(commands, &grid, &images, Coords(Vec2i::new(x, y)));
+            }
+        }
+    }
 }
 
 fn spawn_player(commands: &mut Commands, images: &Images, grid: &Grid) {
@@ -106,6 +131,8 @@ fn spawn_player(commands: &mut Commands, images: &Images, grid: &Grid) {
             layer: Layer(10),
             ..Default::default()
         })
+        .with_bundle(ActorBundle::default())
+        .with_bundle(CombatBundle::default())
         .with_bundle(KinematicBodyBundle::solid())
         .with(Player)
         .with(StateCleanup);
@@ -136,6 +163,24 @@ fn spawn_tile(commands: &mut Commands, grid: &Grid, images: &Images, coords: Coo
         })
         .with(Body::new(solid))
         .with(Tile)
+        .with(StateCleanup);
+}
+
+fn spawn_enemy(commands: &mut Commands, grid: &Grid, images: &Images, coords: Coords) {
+    // Enemy's View
+    let view = create_view(commands, &grid, images, Image::Goblin);
+
+    // Actual Enemy Entity
+    commands
+        .spawn(BoardObjectBundle {
+            view_anchor: ViewAnchor(Some(view)),
+            coords,
+            layer: Layer(10),
+            ..Default::default()
+        })
+        .with_bundle(ActorBundle::default())
+        .with_bundle(CombatBundle::default())
+        .with_bundle(KinematicBodyBundle::solid())
         .with(StateCleanup);
 }
 

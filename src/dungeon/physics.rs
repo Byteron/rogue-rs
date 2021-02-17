@@ -1,8 +1,8 @@
-use bevy::prelude::*;
+use bevy::{app, prelude::*};
 
 use crate::core::math::Vec2i;
 
-use super::bob::Coords;
+use super::{actor::Approach, bob::Coords};
 
 pub struct Body {
     solid: bool,
@@ -69,39 +69,46 @@ impl KinematicBodyBundle {
     }
 }
 
-pub fn collision(
-    mut movers: Query<(&mut Step, &Coords, &Body), Mutated<Step>>,
+pub fn approach(
+    mut movers: Query<(&mut Approach, &Coords, &mut Step, &Body), Mutated<Approach>>,
     bodies: Query<(&Coords, &Body)>,
 ) {
-    for (mut step, coords, body) in movers.iter_mut() {
-        if !body.solid {
+    for (mut approach, coords, mut step, body) in movers.iter_mut() {
+        if !body.solid || approach.direction == Vec2i::zero() {
             continue;
         }
 
-        let target_coords = Coords(coords.0 + step.direction);
+        let mut colliding = false;
 
-        for (other_coords, other_body) in bodies.iter() {
-            if other_body.solid && target_coords.0 == other_coords.0 {
-                step.direction = Vec2i::zero();
+        let target_coords = Coords(coords.0 + approach.direction);
+
+        for (other_coords, body) in bodies.iter() {
+            if body.solid && target_coords.0 == other_coords.0 {
+                colliding = true;
+                println!("Collision at {:?}", target_coords.0);
                 break;
             }
+        }
+
+        if !colliding {
+            step.direction = approach.direction;
+            approach.direction = Vec2i::zero();
         }
     }
 }
 
-pub fn step(time: Res<Time>, mut query: Query<(&Step, &mut StepTimer, &mut Coords), With<Body>>) {
-    for (step, mut timer, mut coords) in query.iter_mut() {
+pub fn movement(
+    time: Res<Time>,
+    mut query: Query<(&mut Step, &mut StepTimer, &mut Coords), With<Body>>,
+) {
+    for (mut step, mut timer, mut coords) in query.iter_mut() {
         timer.0.tick(time.delta_seconds());
 
         if timer.0.finished() && step.direction != Vec2i::zero() {
             coords.0 += step.direction;
             timer.0.reset();
+            step.direction = Vec2i::zero();
+            println!("Stepped on {:?}", coords.0);
         }
-    }
-}
-
-pub fn cleanup(mut query: Query<&mut Step, Changed<Step>>) {
-    for mut step in query.iter_mut() {
-        step.direction = Vec2i::zero();
     }
 }

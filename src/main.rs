@@ -25,7 +25,7 @@ fn main() {
         // Window
         .insert_resource(WindowDescriptor {
             title: "ROGUE™ PRE-ALPHA".into(),
-            vsync: true,
+            vsync: false,
             resizable: true,
             ..Default::default()
         })
