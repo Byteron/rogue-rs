@@ -2,27 +2,20 @@ use bevy::prelude::*;
 
 use crate::core::math::Vec2i;
 
-use super::{actor::StepTimer, bob::Coords};
+use super::physics::Step;
 
 pub struct Player;
 
-pub fn movement(
-    input: Res<Input<KeyCode>>,
-    mut players: Query<(&mut Coords, &mut StepTimer), With<Player>>,
-) {
-    for (mut coords, mut timer) in players.iter_mut() {
-        if !timer.0.finished() {
-            continue;
-        }
-
+pub fn movement(input: Res<Input<KeyCode>>, mut players: Query<&mut Step, With<Player>>) {
+    for mut step in players.iter_mut() {
         let direction = get_input_direction(&input);
 
         if direction == Vec2i::zero() {
             continue;
         }
 
-        coords.0 += direction;
-        timer.0.reset();
+        step.direction = direction;
+        println!("Step! {:?}", step.direction);
     }
 }
 
