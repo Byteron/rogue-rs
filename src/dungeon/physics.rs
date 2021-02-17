@@ -1,4 +1,4 @@
-use bevy::{app, prelude::*};
+use bevy::prelude::*;
 
 use crate::core::math::Vec2i;
 
@@ -22,8 +22,6 @@ impl Body {
     }
 }
 
-pub struct StepTimer(pub Timer);
-
 pub struct Step {
     pub direction: Vec2i,
 }
@@ -39,7 +37,6 @@ impl Default for Step {
 #[derive(Bundle)]
 pub struct KinematicBodyBundle {
     pub step: Step,
-    pub step_timer: StepTimer,
     pub body: Body,
 }
 
@@ -47,7 +44,6 @@ impl KinematicBodyBundle {
     pub fn new(solid: bool) -> Self {
         KinematicBodyBundle {
             step: Step::default(),
-            step_timer: StepTimer(Timer::from_seconds(0.15, false)),
             body: Body { solid },
         }
     }
@@ -55,7 +51,6 @@ impl KinematicBodyBundle {
     pub fn solid() -> Self {
         KinematicBodyBundle {
             step: Step::default(),
-            step_timer: StepTimer(Timer::from_seconds(0.15, false)),
             body: Body::solid(),
         }
     }
@@ -63,7 +58,6 @@ impl KinematicBodyBundle {
     pub fn hollow() -> Self {
         KinematicBodyBundle {
             step: Step::default(),
-            step_timer: StepTimer(Timer::from_seconds(0.15, false)),
             body: Body::hollow(),
         }
     }
@@ -75,6 +69,7 @@ pub fn approach(
 ) {
     for (mut approach, coords, mut step, body) in movers.iter_mut() {
         if !body.solid || approach.direction == Vec2i::zero() {
+            approach.direction = Vec2i::zero();
             continue;
         }
 
@@ -97,18 +92,11 @@ pub fn approach(
     }
 }
 
-pub fn movement(
-    time: Res<Time>,
-    mut query: Query<(&mut Step, &mut StepTimer, &mut Coords), With<Body>>,
-) {
-    for (mut step, mut timer, mut coords) in query.iter_mut() {
-        timer.0.tick(time.delta_seconds());
+pub fn movement(mut query: Query<(&mut Step, &mut Coords), Mutated<Step>>) {
+    for (mut step, mut coords) in query.iter_mut() {
+        coords.0 += step.direction;
+        println!("Stepped on {:?}", coords.0);
 
-        if timer.0.finished() && step.direction != Vec2i::zero() {
-            coords.0 += step.direction;
-            timer.0.reset();
-            step.direction = Vec2i::zero();
-            println!("Stepped on {:?}", coords.0);
-        }
+        step.direction = Vec2i::zero();
     }
 }

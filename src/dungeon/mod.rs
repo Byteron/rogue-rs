@@ -40,11 +40,18 @@ impl Plugin for DungeonPlugin {
         app.insert_resource(Grid::new(64, 64))
             .init_resource::<Images>()
             .on_state_enter(APPSTATES, AppState::Dungeon, setup.system())
+            // Payer Input
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
                 player::movement.system().label(PLAYER_INPUT),
             )
+            .on_state_update(
+                APPSTATES,
+                AppState::Dungeon,
+                actor::tick.system().before(APPROACH_COMBAT),
+            )
+            // Combat
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
@@ -63,6 +70,7 @@ impl Plugin for DungeonPlugin {
                 AppState::Dungeon,
                 combat::death.system().after(COMBAT),
             )
+            // Movement
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
@@ -83,6 +91,11 @@ impl Plugin for DungeonPlugin {
                 APPSTATES,
                 AppState::Dungeon,
                 bob::update_position.system().label(MOVED).after(MOVEMENT),
+            )
+            .on_state_update(
+                APPSTATES,
+                AppState::Dungeon,
+                actor::cleanup.system().after(MOVED),
             )
             .on_state_update(
                 APPSTATES,

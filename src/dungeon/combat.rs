@@ -83,6 +83,7 @@ pub fn approach(
 ) {
     for (mut approach, coords, attitude, mut attack) in attackers.iter_mut() {
         if *attitude == Attitude::Friendly || approach.direction == Vec2i::zero() {
+            approach.direction = Vec2i::zero();
             continue;
         }
 
@@ -92,7 +93,6 @@ pub fn approach(
             if target_coords.0 == other_coords.0 {
                 attack.direction = approach.direction;
                 approach.direction = Vec2i::zero();
-                println!("Attacking {:?}", target_coords.0);
             }
         }
     }
@@ -113,9 +113,10 @@ pub fn attack(
                     "Attack at {:?}, dealt {} Damage. ({} -> {})",
                     target_coords.0, strength.0, value, health.value
                 );
-                attack.direction = Vec2i::zero();
             }
         }
+
+        attack.direction = Vec2i::zero();
     }
 }
 
@@ -130,5 +131,7 @@ pub fn death(commands: &mut Commands, query: Query<(Entity, &ViewAnchor, &Health
         }
 
         commands.despawn(entity);
+
+        println!("{:?} Died", entity);
     }
 }
