@@ -3,12 +3,6 @@ use bevy::prelude::*;
 
 use super::{actor::Approach, bob::Coords, view::ViewAnchor};
 
-pub enum Attitude {
-    Friendly,
-    Neutral,
-    Hostile,
-}
-
 pub struct Strength(pub i32);
 
 pub struct Attack {
@@ -60,7 +54,6 @@ pub struct CombatBundle {
     pub health: Health,
     pub attack: Attack,
     pub strength: Strength,
-    pub attitute: Attitude,
 }
 
 impl Default for CombatBundle {
@@ -71,7 +64,6 @@ impl Default for CombatBundle {
                 direction: Vec2i::zero(),
             },
             strength: Strength(12),
-            attitute: Attitude::Hostile,
         }
     }
 }
