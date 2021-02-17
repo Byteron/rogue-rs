@@ -4,39 +4,32 @@ use crate::core::math::Vec2i;
 
 pub struct Actor;
 
-pub struct Approach {
+pub struct Facing {
     pub direction: Vec2i,
 }
-
-pub struct ApproachTimer(pub Timer);
+pub struct ActionTimer(pub Timer);
 
 #[derive(Bundle)]
 pub struct ActorBundle {
     actor: Actor,
-    approach: Approach,
-    approach_timer: ApproachTimer,
+    facing: Facing,
+    action_timer: ActionTimer,
 }
 
 impl Default for ActorBundle {
     fn default() -> Self {
         ActorBundle {
             actor: Actor,
-            approach: Approach {
-                direction: Vec2i::zero(),
+            facing: Facing {
+                direction: Vec2i::new(0, -1),
             },
-            approach_timer: ApproachTimer(Timer::from_seconds(0.15, false)),
+            action_timer: ActionTimer(Timer::from_seconds(0.2, false)),
         }
     }
 }
 
-pub fn tick(time: Res<Time>, mut query: Query<&mut ApproachTimer>) {
+pub fn tick(time: Res<Time>, mut query: Query<&mut ActionTimer>) {
     for mut timer in query.iter_mut() {
         timer.0.tick(time.delta_seconds());
-    }
-}
-
-pub fn cleanup(mut query: Query<&mut Approach, Mutated<Approach>>) {
-    for mut approach in query.iter_mut() {
-        approach.direction = Vec2i::zero();
     }
 }

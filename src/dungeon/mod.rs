@@ -24,9 +24,8 @@ use bevy::prelude::*;
 use bob::BoardObjectBundle;
 use rand::Rng;
 
+const TIMER_TICK: &str = "TimerTick";
 const PLAYER_INPUT: &str = "PlayerInput";
-const APPROACH_COMBAT: &str = "ApproacCombat";
-const APPROACH_MOVEMENT: &str = "ApproachMovement";
 const COMBAT: &str = "Combat";
 const MOVEMENT: &str = "Movement";
 const MOVED: &str = "PlayerMoved";
@@ -40,30 +39,27 @@ impl Plugin for DungeonPlugin {
         app.insert_resource(Grid::new(64, 64))
             .init_resource::<Images>()
             .on_state_enter(APPSTATES, AppState::Dungeon, setup.system())
+            .on_state_update(
+                APPSTATES,
+                AppState::Dungeon,
+                actor::tick.system().label(TIMER_TICK),
+            )
             // Payer Input
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
-                player::movement.system().label(PLAYER_INPUT),
+                player::movement_input.system().label(PLAYER_INPUT).after(TIMER_TICK),
             )
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
-                actor::tick.system().before(APPROACH_COMBAT),
+                player::combat_input.system().after(TIMER_TICK).before(PLAYER_INPUT),
             )
             // Combat
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
-                combat::approach
-                    .system()
-                    .label(APPROACH_COMBAT)
-                    .after(PLAYER_INPUT),
-            )
-            .on_state_update(
-                APPSTATES,
-                AppState::Dungeon,
-                combat::attack.system().label(COMBAT).after(APPROACH_COMBAT),
+                combat::attack.system().label(COMBAT).after(PLAYER_INPUT),
             )
             .on_state_update(
                 APPSTATES,
@@ -74,28 +70,15 @@ impl Plugin for DungeonPlugin {
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
-                physics::approach
-                    .system()
-                    .label(APPROACH_MOVEMENT)
-                    .after(COMBAT),
-            )
-            .on_state_update(
-                APPSTATES,
-                AppState::Dungeon,
                 physics::movement
                     .system()
                     .label(MOVEMENT)
-                    .after(APPROACH_MOVEMENT),
+                    .after(PLAYER_INPUT),
             )
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
                 bob::update_position.system().label(MOVED).after(MOVEMENT),
-            )
-            .on_state_update(
-                APPSTATES,
-                AppState::Dungeon,
-                actor::cleanup.system().after(MOVED),
             )
             .on_state_update(
                 APPSTATES,

@@ -2,23 +2,45 @@ use bevy::prelude::*;
 
 use crate::core::math::Vec2i;
 
-use super::actor::{Approach, ApproachTimer};
+use super::{actor::{ActionTimer, Facing}, combat::Attack, physics::Step};
 
 pub struct Player;
 
-pub fn movement(
+pub fn movement_input(
     input: Res<Input<KeyCode>>,
-    mut players: Query<(&mut Approach, &mut ApproachTimer), With<Player>>,
+    mut query: Query<(&mut Step, &mut ActionTimer, &mut Facing), With<Player>>,
 ) {
-    for (mut approach, mut timer) in players.iter_mut() {
+    for (mut step, mut timer, mut facing) in query.iter_mut() {
         let direction = get_input_direction(&input);
 
         if !timer.0.finished() || direction == Vec2i::zero() {
             continue;
         }
 
-        approach.direction = direction;
-        timer.0.reset();
+        if facing.direction == direction {
+            step.direction = direction;
+            timer.0.reset();
+        } else {
+            facing.direction = direction;
+            timer.0.reset();
+            println!("Faced to {:?}", direction);
+        }
+    }
+}
+
+pub fn combat_input(
+    input: Res<Input<KeyCode>>,
+    mut query: Query<(&mut Attack, &mut ActionTimer, &Facing), With<Player>>,
+) {
+    for (mut attack, mut timer, facing) in query.iter_mut() {
+        if !timer.0.finished() {
+            continue;
+        }
+
+        if input.pressed(KeyCode::F) {
+            attack.direction = facing.direction;
+            timer.0.reset();
+        }
     }
 }
 

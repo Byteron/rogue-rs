@@ -1,7 +1,7 @@
 use crate::core::math::Vec2i;
 use bevy::prelude::*;
 
-use super::{actor::Approach, bob::Coords, view::ViewAnchor};
+use super::{bob::Coords, view::ViewAnchor};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Attitude {
@@ -13,7 +13,7 @@ pub enum Attitude {
 pub struct Strength(pub i32);
 
 pub struct Attack {
-    direction: Vec2i,
+    pub direction: Vec2i,
 }
 
 pub struct Health {
@@ -77,27 +77,6 @@ impl Default for CombatBundle {
     }
 }
 
-pub fn approach(
-    mut attackers: Query<(&mut Approach, &Coords, &Attitude, &mut Attack), Mutated<Approach>>,
-    actors: Query<&Coords, With<Health>>,
-) {
-    for (mut approach, coords, attitude, mut attack) in attackers.iter_mut() {
-        if *attitude == Attitude::Friendly || approach.direction == Vec2i::zero() {
-            approach.direction = Vec2i::zero();
-            continue;
-        }
-
-        let target_coords = Coords(coords.0 + approach.direction);
-
-        for other_coords in actors.iter() {
-            if target_coords.0 == other_coords.0 {
-                attack.direction = approach.direction;
-                approach.direction = Vec2i::zero();
-            }
-        }
-    }
-}
-
 pub fn attack(
     mut attackers: Query<(&mut Attack, &Strength, &Coords), Mutated<Attack>>,
     mut actors: Query<(&Coords, &mut Health)>,
@@ -131,7 +110,7 @@ pub fn death(commands: &mut Commands, query: Query<(Entity, &ViewAnchor, &Health
         }
 
         commands.despawn(entity);
-
+        
         println!("{:?} Died", entity);
     }
 }
