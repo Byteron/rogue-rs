@@ -3,6 +3,13 @@ use bevy::prelude::*;
 
 use super::{actor::Approach, bob::Coords, view::ViewAnchor};
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Attitude {
+    Friendly,
+    Neutral,
+    Hostile,
+}
+
 pub struct Strength(pub i32);
 
 pub struct Attack {
@@ -54,6 +61,7 @@ pub struct CombatBundle {
     pub health: Health,
     pub attack: Attack,
     pub strength: Strength,
+    pub attitute: Attitude,
 }
 
 impl Default for CombatBundle {
@@ -64,16 +72,17 @@ impl Default for CombatBundle {
                 direction: Vec2i::zero(),
             },
             strength: Strength(12),
+            attitute: Attitude::Hostile,
         }
     }
 }
 
 pub fn approach(
-    mut attackers: Query<(&mut Approach, &Coords, &mut Attack), Mutated<Approach>>,
+    mut attackers: Query<(&mut Approach, &Coords, &Attitude, &mut Attack), Mutated<Approach>>,
     actors: Query<&Coords, With<Health>>,
 ) {
-    for (mut approach, coords, mut attack) in attackers.iter_mut() {
-        if approach.direction == Vec2i::zero() {
+    for (mut approach, coords, attitude, mut attack) in attackers.iter_mut() {
+        if *attitude == Attitude::Friendly || approach.direction == Vec2i::zero() {
             continue;
         }
 
