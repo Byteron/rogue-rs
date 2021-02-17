@@ -87,7 +87,6 @@ pub fn movement(
             if body.solid && target_coords.0 == other_coords.0 {
                 colliding = true;
                 step.direction = Vec2i::zero();
-                println!("Collision at {:?}", target_coords.0);
                 break;
             }
         }
@@ -97,7 +96,6 @@ pub fn movement(
         if !colliding {
             coords.0 += step.direction;
             step.direction = Vec2i::zero();
-            println!("Stepped on {:?}", coords.0);
         }
     }
 }

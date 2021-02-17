@@ -1,5 +1,5 @@
 use crate::{
-    core::{AppState, APPSTATES},
+    core::{AppState, APPSTATES, VIEW_STAGE},
     dungeon::DungeonPlugin,
 };
 use bevy::{
@@ -13,9 +13,9 @@ mod dungeon;
 fn main() {
     App::build()
         // Debug
-        // .insert_resource(ReportExecutionOrderAmbiguities)
-        // .add_plugin(LogDiagnosticsPlugin::default())
-        // .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .insert_resource(ReportExecutionOrderAmbiguities)
+        .add_plugin(LogDiagnosticsPlugin::default())
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .insert_resource(bevy::log::LogSettings {
             level: bevy::log::Level::DEBUG,
             ..Default::default()
@@ -32,6 +32,7 @@ fn main() {
         .insert_resource(ClearColor(Color::BLACK))
         // App State
         .add_stage_before(stage::UPDATE, APPSTATES, StateStage::<AppState>::default())
+        .add_stage_after(stage::UPDATE, VIEW_STAGE, StateStage::<AppState>::default())
         .insert_resource(State::new(AppState::Dungeon))
         // State Plugins
         .add_plugin(DungeonPlugin)

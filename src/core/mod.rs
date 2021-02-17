@@ -3,6 +3,7 @@ use bevy::prelude::*;
 pub mod math;
 
 pub const APPSTATES: &str = "AppStates";
+pub const VIEW_STAGE: &str = "ViewStage";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AppState {

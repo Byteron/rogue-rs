@@ -6,6 +6,7 @@ mod grid;
 mod images;
 mod physics;
 mod player;
+mod room;
 mod tile;
 mod view;
 
@@ -14,17 +15,19 @@ use self::{
     bob::{Coords, Layer},
     combat::CombatBundle,
     grid::Grid,
-    images::{Image, Images},
-    physics::{Body, KinematicBodyBundle},
+    images::{ActorImages, TileImages},
+    physics::KinematicBodyBundle,
     player::Player,
-    tile::Tile,
-    view::{View, ViewAnchor},
+    room::Room,
+    tile::TileType,
 };
-use crate::core::{math::Vec2i, AppState, APPSTATES};
+use crate::core::{math::Vec2i, AppState, APPSTATES, VIEW_STAGE};
+use actor::ActorType;
 use ai::{AiTickEvent, GoblinAi};
 use bevy::prelude::*;
 use bob::BoardObjectBundle;
 use rand::Rng;
+use tile::TileBundle;
 
 const TIMER_TICK: &str = "TimerTick";
 const PLAYER_INPUT: &str = "PlayerInput";
@@ -32,6 +35,7 @@ const AI: &str = "Ai";
 const COMBAT: &str = "Combat";
 const MOVEMENT: &str = "Movement";
 const MOVED: &str = "PlayerMoved";
+const VIEW: &str = "View";
 
 struct StateCleanup;
 
@@ -41,7 +45,8 @@ impl Plugin for DungeonPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_event::<AiTickEvent>()
             .insert_resource(Grid::new(64, 64))
-            .init_resource::<Images>()
+            .init_resource::<ActorImages>()
+            .init_resource::<TileImages>()
             .on_state_enter(APPSTATES, AppState::Dungeon, setup.system())
             .on_state_update(
                 APPSTATES,
@@ -102,8 +107,9 @@ impl Plugin for DungeonPlugin {
             .on_state_update(
                 APPSTATES,
                 AppState::Dungeon,
-                view::sync_views.system().after(MOVED),
+                view::spawn_views.system().label(VIEW).after(MOVED),
             )
+            .on_state_update(VIEW_STAGE, AppState::Dungeon, view::sync_views.system())
             .on_state_exit(
                 APPSTATES,
                 AppState::Dungeon,
@@ -112,37 +118,56 @@ impl Plugin for DungeonPlugin {
     }
 }
 
-fn setup(commands: &mut Commands, grid: Res<Grid>, images: Res<Images>) {
+fn setup(commands: &mut Commands, grid: Res<Grid>) {
+    let room = Room {
+        position: Vec2i::new(0, 0),
+        size: Vec2i::new(19, 11),
+    };
+
     commands
-        .spawn(OrthographicCameraBundle::new_2d())
+        .spawn(OrthographicCameraBundle {
+            transform: Transform::from_translation(
+                grid.map_to_world(room.center()).extend(1000).as_f32(),
+            ),
+            ..OrthographicCameraBundle::new_2d()
+        })
         .with(StateCleanup);
 
-    spawn_player(commands, &images, &grid);
+    spawn_player(commands, Coords(room.center()));
 
-    for y in -10..=10 {
-        for x in -10..=10 {
-            spawn_tile(commands, &grid, &images, Coords(Vec2i::new(x, y)));
+    let mut rng = rand::thread_rng();
+
+    for coords in room.coords().iter_mut() {
+        if room.is_door(*coords) {
+            spawn_tile(commands, Coords(*coords), TileType::Floor, false);
+        } else if room.is_entrance(*coords) {
+            spawn_tile(commands, Coords(*coords), TileType::Floor, false);
+        } else if room.is_border(*coords) {
+            spawn_tile(commands, Coords(*coords), TileType::Wall, true);
+        } else if rng.gen_bool(0.1) {
+            spawn_tile(commands, Coords(*coords), TileType::Wall, true);
+        } else {
+            spawn_tile(commands, Coords(*coords), TileType::Floor, false);
         }
     }
 
-    for y in -9..=9 {
-        for x in -9..=9 {
-            let mut rng = rand::thread_rng();
-            if rng.gen_bool(0.1) {
-                spawn_enemy(commands, &grid, &images, Coords(Vec2i::new(x, y)));
-            }
+    for coords in room.coords().iter_mut() {
+        if rng.gen_bool(0.1)
+            && !room.is_border(*coords)
+            && !room.is_entrance(*coords)
+            && !room.is_door(*coords)
+            && !room.is_center(*coords)
+        {
+            spawn_enemy(commands, Coords(*coords), ActorType::Goblin);
         }
     }
 }
 
-fn spawn_player(commands: &mut Commands, images: &Images, grid: &Grid) {
-    // Player's View
-    let view = create_view(commands, &grid, images, Image::Human);
-
+fn spawn_player(commands: &mut Commands, coords: Coords) {
     // Actual Player Entity
     commands
         .spawn(BoardObjectBundle {
-            view_anchor: ViewAnchor(Some(view)),
+            coords,
             layer: Layer(10),
             ..Default::default()
         })
@@ -153,69 +178,29 @@ fn spawn_player(commands: &mut Commands, images: &Images, grid: &Grid) {
         .with(StateCleanup);
 }
 
-fn spawn_tile(commands: &mut Commands, grid: &Grid, images: &Images, coords: Coords) {
-    let mut rng = rand::thread_rng();
-    let solid: bool;
-
-    // Tile's View
-    let view: Entity;
-
-    if coords.0.x == 10 || coords.0.y == 10 || coords.0.x == -10 || coords.0.y == -10 {
-        view = create_view(commands, &grid, images, Image::Wall);
-        solid = true;
-    } else if rng.gen_bool(0.1) {
-        view = create_view(commands, &grid, images, Image::Wall);
-        solid = true;
-    } else {
-        view = create_view(commands, &grid, images, Image::Floor);
-        solid = false;
-    }
-
+fn spawn_tile(commands: &mut Commands, coords: Coords, tile_type: TileType, solid: bool) {
     // Actual Tile Entity
     commands
         .spawn(BoardObjectBundle {
-            view_anchor: ViewAnchor(Some(view)),
             coords,
             layer: Layer(0),
             ..Default::default()
         })
-        .with(Body::new(solid))
-        .with(Tile)
+        .with_bundle(TileBundle::new(tile_type, solid))
         .with(StateCleanup);
 }
 
-fn spawn_enemy(commands: &mut Commands, grid: &Grid, images: &Images, coords: Coords) {
-    // Enemy's View
-    let view = create_view(commands, &grid, images, Image::Goblin);
-
+fn spawn_enemy(commands: &mut Commands, coords: Coords, actor_type: ActorType) {
     // Actual Enemy Entity
     commands
         .spawn(BoardObjectBundle {
-            view_anchor: ViewAnchor(Some(view)),
             coords,
             layer: Layer(10),
             ..Default::default()
         })
-        .with_bundle(ActorBundle::default())
+        .with_bundle(ActorBundle::new(actor_type))
         .with_bundle(CombatBundle::default())
         .with_bundle(KinematicBodyBundle::solid())
         .with(GoblinAi)
         .with(StateCleanup);
-}
-
-fn create_view(commands: &mut Commands, grid: &Grid, images: &Images, image: Image) -> Entity {
-    commands
-        .spawn(SpriteBundle {
-            material: images.get(image),
-            transform: Transform::from_translation(Vec3::zero()),
-            sprite: Sprite {
-                size: grid.cell_size.as_f32(),
-                resize_mode: SpriteResizeMode::Manual,
-            },
-            ..Default::default()
-        })
-        .with(View)
-        .with(StateCleanup)
-        .current_entity()
-        .unwrap()
 }
