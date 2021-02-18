@@ -9,7 +9,6 @@ mod dungeon;
 
 pub const APPSTATE_UPDATE: &str = "AppStateUpdate";
 pub const PHYSICS_UPDATE: &str = "PhysicsUpdate";
-pub const APPSTATE_LATE_UPDATE: &str = "LateUpdate";
 pub const VIEW_STARTUP: &str = "ViewSetup";
 pub const VIEW_UPDATE: &str = "ViewStage";
 
@@ -51,11 +50,6 @@ fn main() {
         )
         .add_stage_after(
             PHYSICS_UPDATE,
-            APPSTATE_LATE_UPDATE,
-            StateStage::<AppState>::default(),
-        )
-        .add_stage_after(
-            APPSTATE_LATE_UPDATE,
             VIEW_STARTUP,
             StateStage::<AppState>::default(),
         )

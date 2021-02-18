@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use super::{
     actor::ActorType,
-    bob::Position,
+    bob::{Coords, Layer},
     grid::Grid,
     images::{ActorImages, TileImages},
     tile::TileType,
@@ -14,13 +14,16 @@ pub struct ViewAnchor(pub Option<Entity>);
 pub struct View;
 
 pub fn sync_views(
-    anchors: Query<(&Position, &ViewAnchor), Or<(Changed<Position>, Changed<ViewAnchor>)>>,
+    grid: Res<Grid>,
+    anchors: Query<(&Coords, &Layer, &ViewAnchor), Or<(Changed<Coords>, Changed<ViewAnchor>)>>,
     mut views: Query<&mut Transform, With<View>>,
 ) {
-    for (position, anchor) in anchors.iter() {
+    for (coords, layer, anchor) in anchors.iter() {
         if let Some(entity) = anchor.0 {
             if let Ok(mut view_transform) = views.get_mut(entity) {
-                view_transform.translation = position.0.extend(position.1).as_f32();
+                let position = grid.map_to_world(coords.0);
+                view_transform.translation =
+                    Vec3::new(position.x as f32, position.y as f32, layer.0 as f32);
             }
         }
     }

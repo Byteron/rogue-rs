@@ -22,8 +22,7 @@ use self::{
     tile::TileType,
 };
 use crate::{
-    core::math::Vec2i, AppState, APPSTATE_LATE_UPDATE, APPSTATE_UPDATE, PHYSICS_UPDATE,
-    VIEW_STARTUP, VIEW_UPDATE,
+    core::math::Vec2i, AppState, APPSTATE_UPDATE, PHYSICS_UPDATE, VIEW_STARTUP, VIEW_UPDATE,
 };
 use actor::ActorType;
 use ai::{AiTickEvent, GoblinAi};
@@ -92,11 +91,6 @@ impl Plugin for DungeonPlugin {
             )
             // Movement
             .on_state_update(PHYSICS_UPDATE, AppState::Dungeon, physics::update.system())
-            .on_state_update(
-                APPSTATE_LATE_UPDATE,
-                AppState::Dungeon,
-                bob::late_update.system(),
-            )
             .on_state_update(VIEW_STARTUP, AppState::Dungeon, view::spawn_views.system())
             .on_state_update(VIEW_UPDATE, AppState::Dungeon, view::sync_views.system())
             .on_state_exit(
