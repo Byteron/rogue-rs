@@ -61,7 +61,20 @@ pub struct CombatBundle {
     pub health: Health,
     pub attack: Attack,
     pub strength: Strength,
-    pub attitute: Attitude,
+    pub attitude: Attitude,
+}
+
+impl CombatBundle {
+    pub fn new(health: i32, strength: i32, attitude: Attitude) -> Self {
+        CombatBundle {
+            health: Health::new(health),
+            attack: Attack {
+                direction: Vec2i::zero(),
+            },
+            strength: Strength(strength),
+            attitude: attitude,
+        }
+    }
 }
 
 impl Default for CombatBundle {
@@ -72,7 +85,7 @@ impl Default for CombatBundle {
                 direction: Vec2i::zero(),
             },
             strength: Strength(12),
-            attitute: Attitude::Hostile,
+            attitude: Attitude::Hostile,
         }
     }
 }

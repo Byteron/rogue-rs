@@ -65,6 +65,22 @@ impl Vec2i {
         Vec2i { x: 0, y: 0 }
     }
 
+    pub fn up() -> Self {
+        Vec2i { x: 0, y: 1 }
+    }
+
+    pub fn down() -> Self {
+        Vec2i { x: 0, y: -1 }
+    }
+
+    pub fn left() -> Self {
+        Vec2i { x: -1, y: 0 }
+    }
+
+    pub fn right() -> Self {
+        Vec2i { x: 1, y: 0 }
+    }
+
     pub fn extend(&self, z: i32) -> Vec3i {
         Vec3i::new(self.x, self.y, z)
     }

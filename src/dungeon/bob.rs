@@ -6,6 +6,19 @@ use super::{grid::Grid, view::ViewAnchor};
 
 pub struct Coords(pub Vec2i);
 
+impl Coords {
+    pub fn get_neighbors(&self) -> Vec<(Vec2i, Coords)> {
+        let mut neighbors: Vec<(Vec2i, Coords)> = Vec::default();
+
+        neighbors.push((Vec2i::up(), Coords(self.0 + Vec2i::up())));
+        neighbors.push((Vec2i::down(), Coords(self.0 + Vec2i::down())));
+        neighbors.push((Vec2i::left(), Coords(self.0 + Vec2i::left())));
+        neighbors.push((Vec2i::right(), Coords(self.0 + Vec2i::right())));
+
+        neighbors
+    }
+}
+
 pub struct Layer(pub i32);
 
 pub struct Position(pub Vec2i, pub i32);
@@ -29,7 +42,7 @@ impl Default for BoardObjectBundle {
     }
 }
 
-pub fn update_position(
+pub fn late_update(
     grid: Res<Grid>,
     mut query: Query<(&mut Position, &Coords, &Layer), Changed<Coords>>,
 ) {

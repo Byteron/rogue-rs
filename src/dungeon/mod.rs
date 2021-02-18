@@ -21,11 +21,15 @@ use self::{
     room::Room,
     tile::TileType,
 };
-use crate::core::{math::Vec2i, AppState, APPSTATES, VIEW_STAGE};
+use crate::{
+    core::math::Vec2i, AppState, APPSTATE_LATE_UPDATE, APPSTATE_UPDATE, PHYSICS_UPDATE,
+    VIEW_STARTUP, VIEW_UPDATE,
+};
 use actor::ActorType;
 use ai::{AiTickEvent, GoblinAi};
 use bevy::prelude::*;
 use bob::BoardObjectBundle;
+use combat::Attitude;
 use rand::Rng;
 use tile::TileBundle;
 
@@ -33,9 +37,6 @@ const TIMER_TICK: &str = "TimerTick";
 const PLAYER_INPUT: &str = "PlayerInput";
 const AI: &str = "Ai";
 const COMBAT: &str = "Combat";
-const MOVEMENT: &str = "Movement";
-const MOVED: &str = "PlayerMoved";
-const VIEW: &str = "View";
 
 struct StateCleanup;
 
@@ -47,15 +48,15 @@ impl Plugin for DungeonPlugin {
             .insert_resource(Grid::new(64, 64))
             .init_resource::<ActorImages>()
             .init_resource::<TileImages>()
-            .on_state_enter(APPSTATES, AppState::Dungeon, setup.system())
+            .on_state_enter(APPSTATE_UPDATE, AppState::Dungeon, setup.system())
             .on_state_update(
-                APPSTATES,
+                APPSTATE_UPDATE,
                 AppState::Dungeon,
                 actor::tick.system().label(TIMER_TICK),
             )
             // Payer Input
             .on_state_update(
-                APPSTATES,
+                APPSTATE_UPDATE,
                 AppState::Dungeon,
                 player::movement_input
                     .system()
@@ -63,7 +64,7 @@ impl Plugin for DungeonPlugin {
                     .after(TIMER_TICK),
             )
             .on_state_update(
-                APPSTATES,
+                APPSTATE_UPDATE,
                 AppState::Dungeon,
                 player::combat_input
                     .system()
@@ -72,7 +73,7 @@ impl Plugin for DungeonPlugin {
             )
             // AI
             .on_state_update(
-                APPSTATES,
+                APPSTATE_UPDATE,
                 AppState::Dungeon,
                 ai::goblin_ai_movement
                     .system()
@@ -81,37 +82,26 @@ impl Plugin for DungeonPlugin {
             )
             // Combat
             .on_state_update(
-                APPSTATES,
+                APPSTATE_UPDATE,
                 AppState::Dungeon,
-                combat::attack.system().label(COMBAT).after(PLAYER_INPUT),
+                combat::attack.system().label(COMBAT).after(AI),
             )
             .on_state_update(
-                APPSTATES,
+                APPSTATE_UPDATE,
                 AppState::Dungeon,
                 combat::death.system().after(COMBAT),
             )
             // Movement
+            .on_state_update(PHYSICS_UPDATE, AppState::Dungeon, physics::update.system())
             .on_state_update(
-                APPSTATES,
+                APPSTATE_LATE_UPDATE,
                 AppState::Dungeon,
-                physics::movement
-                    .system()
-                    .label(MOVEMENT)
-                    .after(PLAYER_INPUT),
+                bob::late_update.system(),
             )
-            .on_state_update(
-                APPSTATES,
-                AppState::Dungeon,
-                bob::update_position.system().label(MOVED).after(MOVEMENT),
-            )
-            .on_state_update(
-                APPSTATES,
-                AppState::Dungeon,
-                view::spawn_views.system().label(VIEW).after(MOVED),
-            )
-            .on_state_update(VIEW_STAGE, AppState::Dungeon, view::sync_views.system())
+            .on_state_update(VIEW_STARTUP, AppState::Dungeon, view::spawn_views.system())
+            .on_state_update(VIEW_UPDATE, AppState::Dungeon, view::sync_views.system())
             .on_state_exit(
-                APPSTATES,
+                APPSTATE_UPDATE,
                 AppState::Dungeon,
                 crate::core::despawn_all::<StateCleanup>.system(),
             );
@@ -172,7 +162,7 @@ fn spawn_player(commands: &mut Commands, coords: Coords) {
             ..Default::default()
         })
         .with_bundle(ActorBundle::default())
-        .with_bundle(CombatBundle::default())
+        .with_bundle(CombatBundle::new(100, 12, Attitude::Neutral))
         .with_bundle(KinematicBodyBundle::solid())
         .with(Player)
         .with(StateCleanup);
@@ -199,7 +189,7 @@ fn spawn_enemy(commands: &mut Commands, coords: Coords, actor_type: ActorType) {
             ..Default::default()
         })
         .with_bundle(ActorBundle::new(actor_type))
-        .with_bundle(CombatBundle::default())
+        .with_bundle(CombatBundle::new(20, 3, Attitude::Hostile))
         .with_bundle(KinematicBodyBundle::solid())
         .with(GoblinAi)
         .with(StateCleanup);

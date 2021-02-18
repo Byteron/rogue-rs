@@ -63,7 +63,7 @@ impl KinematicBodyBundle {
     }
 }
 
-pub fn movement(
+pub fn update(
     mut coordinates: Query<&mut Coords, With<Body>>,
     mut movers: Query<(Entity, &mut Step, &Body)>,
     bodies: Query<(Entity, &Body)>,
