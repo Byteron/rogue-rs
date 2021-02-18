@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::core::math::Vec2i;
 
-use super::{grid::Grid, view::ViewAnchor};
+use super::view::ViewAnchor;
 
 pub struct Coords(pub Vec2i);
 

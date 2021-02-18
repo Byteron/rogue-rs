@@ -16,7 +16,7 @@ pub fn goblin_ai_movement(
 ) {
     let mut rng = rand::thread_rng();
 
-    for event in event_reader.iter() {
+    for _ in event_reader.iter() {
         'goblin: for (mut step, mut attack, goblin_coords) in query.iter_mut() {
             for (n_dir, n_coords) in goblin_coords.get_neighbors() {
                 for player_coords in players.iter() {

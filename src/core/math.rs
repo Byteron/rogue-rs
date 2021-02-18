@@ -88,15 +88,6 @@ impl Vec2i {
     pub fn as_f32(&self) -> Vec2 {
         Vec2::new(self.x as f32, self.y as f32)
     }
-
-    pub fn get_neighbors(&self) -> [Vec2i; 4] {
-        [
-            *self + Vec2i::new(0, -1),
-            *self + Vec2i::new(-1, 0),
-            *self + Vec2i::new(1, 0),
-            *self + Vec2i::new(0, 1),
-        ]
-    }
 }
 
 impl Add<Vec2i> for Vec2i {
