@@ -16,7 +16,7 @@ use self::{
     combat::CombatBundle,
     grid::Grid,
     images::{ActorImages, TileImages},
-    physics::{KinematicBodyBundle, Solid},
+    physics::{KinematicBodyBundle, PhysicsState, Solid},
     player::Player,
     room::Room,
     tile::TileType,
@@ -44,6 +44,7 @@ impl Plugin for DungeonPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_event::<AiTickEvent>()
             .insert_resource(Grid::new(64, 64))
+            .insert_resource(PhysicsState::default())
             .init_resource::<ActorImages>()
             .init_resource::<TileImages>()
             .on_state_enter(APPSTATE_UPDATE, AppState::Dungeon, setup.system())

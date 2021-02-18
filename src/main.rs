@@ -20,13 +20,13 @@ pub enum AppState {
 fn main() {
     App::build()
         // Debug
-        // .insert_resource(ReportExecutionOrderAmbiguities)
-        // .add_plugin(LogDiagnosticsPlugin::default())
-        // .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        // .insert_resource(bevy::log::LogSettings {
-        //     level: bevy::log::Level::DEBUG,
-        //     ..Default::default()
-        // })
+        .insert_resource(ReportExecutionOrderAmbiguities)
+        .add_plugin(LogDiagnosticsPlugin::default())
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .insert_resource(bevy::log::LogSettings {
+            level: bevy::log::Level::DEBUG,
+            ..Default::default()
+        })
         // General
         .add_plugins(DefaultPlugins)
         // Window
