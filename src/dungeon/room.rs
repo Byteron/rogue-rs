@@ -1,8 +1,4 @@
-use rand::Rng;
-
 use crate::core::math::Vec2i;
-
-use super::tile::TileType;
 
 pub struct Room {
     pub position: Vec2i,

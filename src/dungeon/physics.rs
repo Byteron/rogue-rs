@@ -4,23 +4,7 @@ use crate::core::math::Vec2i;
 
 use super::bob::Coords;
 
-pub struct Body {
-    solid: bool,
-}
-
-impl Body {
-    pub fn new(solid: bool) -> Self {
-        Body { solid }
-    }
-
-    pub fn solid() -> Self {
-        Body { solid: true }
-    }
-
-    pub fn hollow() -> Self {
-        Body { solid: true }
-    }
-}
+pub struct Solid;
 
 pub struct Step {
     pub direction: Vec2i,
@@ -37,39 +21,25 @@ impl Default for Step {
 #[derive(Bundle)]
 pub struct KinematicBodyBundle {
     pub step: Step,
-    pub body: Body,
+    pub body: Solid,
 }
 
-impl KinematicBodyBundle {
-    pub fn new(solid: bool) -> Self {
+impl Default for KinematicBodyBundle {
+    fn default() -> Self {
         KinematicBodyBundle {
             step: Step::default(),
-            body: Body { solid },
-        }
-    }
-
-    pub fn solid() -> Self {
-        KinematicBodyBundle {
-            step: Step::default(),
-            body: Body::solid(),
-        }
-    }
-
-    pub fn hollow() -> Self {
-        KinematicBodyBundle {
-            step: Step::default(),
-            body: Body::hollow(),
+            body: Solid,
         }
     }
 }
 
 pub fn update(
-    mut coordinates: Query<&mut Coords, With<Body>>,
-    mut movers: Query<(Entity, &mut Step, &Body)>,
-    bodies: Query<(Entity, &Body)>,
+    mut coordinates: Query<&mut Coords, With<Solid>>,
+    mut movers: Query<(Entity, &mut Step), With<Solid>>,
+    bodies: Query<Entity, With<Solid>>,
 ) {
-    for (entity, mut step, body) in movers.iter_mut() {
-        if !body.solid || step.direction == Vec2i::zero() {
+    for (entity, mut step) in movers.iter_mut() {
+        if step.direction == Vec2i::zero() {
             continue;
         }
 
@@ -81,10 +51,10 @@ pub fn update(
 
         let mut colliding = false;
 
-        for (entity, body) in bodies.iter() {
+        for entity in bodies.iter() {
             let other_coords = coordinates.get_mut(entity).unwrap();
 
-            if body.solid && target_coords.0 == other_coords.0 {
+            if target_coords.0 == other_coords.0 {
                 colliding = true;
                 step.direction = Vec2i::zero();
                 break;

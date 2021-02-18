@@ -16,7 +16,7 @@ use self::{
     combat::CombatBundle,
     grid::Grid,
     images::{ActorImages, TileImages},
-    physics::KinematicBodyBundle,
+    physics::{KinematicBodyBundle, Solid},
     player::Player,
     room::Room,
     tile::TileType,
@@ -31,7 +31,6 @@ use bevy::prelude::*;
 use bob::BoardObjectBundle;
 use combat::Attitude;
 use rand::Rng;
-use tile::TileBundle;
 
 const TIMER_TICK: &str = "TimerTick";
 const PLAYER_INPUT: &str = "PlayerInput";
@@ -163,21 +162,27 @@ fn spawn_player(commands: &mut Commands, coords: Coords) {
         })
         .with_bundle(ActorBundle::default())
         .with_bundle(CombatBundle::new(100, 12, Attitude::Neutral))
-        .with_bundle(KinematicBodyBundle::solid())
+        .with_bundle(KinematicBodyBundle::default())
         .with(Player)
         .with(StateCleanup);
 }
 
 fn spawn_tile(commands: &mut Commands, coords: Coords, tile_type: TileType, solid: bool) {
     // Actual Tile Entity
-    commands
+    let tile = commands
         .spawn(BoardObjectBundle {
             coords,
             layer: Layer(0),
             ..Default::default()
         })
-        .with_bundle(TileBundle::new(tile_type, solid))
-        .with(StateCleanup);
+        .with(tile_type)
+        .with(StateCleanup)
+        .current_entity()
+        .unwrap();
+
+    if solid {
+        commands.insert_one(tile, Solid);
+    }
 }
 
 fn spawn_enemy(commands: &mut Commands, coords: Coords, actor_type: ActorType) {
@@ -190,7 +195,7 @@ fn spawn_enemy(commands: &mut Commands, coords: Coords, actor_type: ActorType) {
         })
         .with_bundle(ActorBundle::new(actor_type))
         .with_bundle(CombatBundle::new(20, 3, Attitude::Hostile))
-        .with_bundle(KinematicBodyBundle::solid())
+        .with_bundle(KinematicBodyBundle::default())
         .with(GoblinAi)
         .with(StateCleanup);
 }
