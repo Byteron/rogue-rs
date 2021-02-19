@@ -66,18 +66,10 @@ impl Plugin for DungeonPlugin {
             .on_state_update(
                 Stage::Update,
                 AppState::Dungeon,
-                player::movement_input
+                player::input
                     .system()
                     .label(Label::Input)
                     .after(Label::Tick),
-            )
-            .on_state_update(
-                Stage::Update,
-                AppState::Dungeon,
-                player::combat_input
-                    .system()
-                    .after(Label::Tick)
-                    .before(Label::Input),
             )
             // AI
             .on_state_update(

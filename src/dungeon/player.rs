@@ -11,12 +11,24 @@ use super::{
 
 pub struct Player;
 
-pub fn movement_input(
+pub fn input(
     input: Res<Input<KeyCode>>,
     mut events: ResMut<Events<AiTickEvent>>,
-    mut query: Query<(&mut Step, &mut ActionTimer, &mut Facing), With<Player>>,
+    mut query: Query<(&mut Step, &mut Attack, &mut ActionTimer, &mut Facing), With<Player>>,
 ) {
-    for (mut step, mut timer, mut facing) in query.iter_mut() {
+    for (mut step, mut attack, mut timer, mut facing) in query.iter_mut() {
+
+        if !timer.0.finished() {
+            continue;
+        }
+
+        if input.pressed(KeyCode::F) {
+            attack.direction = facing.direction;
+            timer.0.reset();
+            events.send(AiTickEvent);
+            return;
+        }
+
         let direction = get_input_direction(&input);
 
         if !timer.0.finished() || direction == Vec2i::zero() {
@@ -31,24 +43,6 @@ pub fn movement_input(
             facing.direction = direction;
             timer.0.reset();
             println!("Faced to {:?}", direction);
-        }
-    }
-}
-
-pub fn combat_input(
-    input: Res<Input<KeyCode>>,
-    mut events: ResMut<Events<AiTickEvent>>,
-    mut query: Query<(&mut Attack, &mut ActionTimer, &Facing), With<Player>>,
-) {
-    for (mut attack, mut timer, facing) in query.iter_mut() {
-        if !timer.0.finished() {
-            continue;
-        }
-
-        if input.pressed(KeyCode::F) {
-            attack.direction = facing.direction;
-            timer.0.reset();
-            events.send(AiTickEvent)
         }
     }
 }
