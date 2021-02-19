@@ -9,7 +9,7 @@ edition = "2018"
 
 [dependencies.bevy]
 git = "https://github.com/bevyengine/bevy.git"
-rev = "a5d2501b75eccbe241a70ad8ccf09787e709fe1f"
+rev = "c2a427f1a38db6b1d9798e631a7da7a8507fe18c"
 
 [profile.dev]
 opt-level = 1

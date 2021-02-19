@@ -65,13 +65,12 @@ pub fn update(
         let target_coords = Coords(coords.0 + step.direction);
 
         if !state.collider.contains(&target_coords.0) {
-            
             state.collider.remove(&coords.0);
             state.collider.insert(target_coords.0);
 
             coords.0 = target_coords.0;
         }
-        
+
         step.direction = Vec2i::zero();
     }
 }

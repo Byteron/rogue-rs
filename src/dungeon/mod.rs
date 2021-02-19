@@ -21,9 +21,7 @@ use self::{
     room::Room,
     tile::TileType,
 };
-use crate::{
-    core::math::Vec2i, AppState, APPSTATE_UPDATE, PHYSICS_UPDATE, VIEW_STARTUP, VIEW_UPDATE,
-};
+use crate::{core::math::Vec2i, AppState};
 use actor::ActorType;
 use ai::{AiTickEvent, GoblinAi};
 use bevy::prelude::*;
@@ -31,10 +29,21 @@ use bob::BoardObjectBundle;
 use combat::Attitude;
 use rand::Rng;
 
-const TIMER_TICK: &str = "TimerTick";
-const PLAYER_INPUT: &str = "PlayerInput";
-const AI: &str = "Ai";
-const COMBAT: &str = "Combat";
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, StageLabel)]
+pub enum Stage {
+    Update,
+    PhysicsUpdate,
+    PreViewUpdate,
+    ViewUpdate,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemLabel)]
+pub enum Label {
+    Tick,
+    Input,
+    Ai,
+    Combat,
+}
 
 struct StateCleanup;
 
@@ -47,55 +56,71 @@ impl Plugin for DungeonPlugin {
             .insert_resource(PhysicsState::default())
             .init_resource::<ActorImages>()
             .init_resource::<TileImages>()
-            .on_state_enter(APPSTATE_UPDATE, AppState::Dungeon, setup.system())
+            .on_state_enter(Stage::Update, AppState::Dungeon, setup.system())
             .on_state_update(
-                APPSTATE_UPDATE,
+                Stage::Update,
                 AppState::Dungeon,
-                actor::tick.system().label(TIMER_TICK),
+                actor::tick.system().label(Label::Tick),
             )
             // Payer Input
             .on_state_update(
-                APPSTATE_UPDATE,
+                Stage::Update,
                 AppState::Dungeon,
                 player::movement_input
                     .system()
-                    .label(PLAYER_INPUT)
-                    .after(TIMER_TICK),
+                    .label(Label::Input)
+                    .after(Label::Tick),
             )
             .on_state_update(
-                APPSTATE_UPDATE,
+                Stage::Update,
                 AppState::Dungeon,
                 player::combat_input
                     .system()
-                    .after(TIMER_TICK)
-                    .before(PLAYER_INPUT),
+                    .after(Label::Tick)
+                    .before(Label::Input),
             )
             // AI
             .on_state_update(
-                APPSTATE_UPDATE,
+                Stage::Update,
                 AppState::Dungeon,
                 ai::goblin_ai_movement
                     .system()
-                    .label(AI)
-                    .after(PLAYER_INPUT),
+                    .label(Label::Ai)
+                    .after(Label::Input),
             )
             // Combat
             .on_state_update(
-                APPSTATE_UPDATE,
+                Stage::Update,
                 AppState::Dungeon,
-                combat::attack.system().label(COMBAT).after(AI),
+                combat::attack
+                    .system()
+                    .label(Label::Combat)
+                    .after(Label::Ai),
             )
             .on_state_update(
-                APPSTATE_UPDATE,
+                Stage::Update,
                 AppState::Dungeon,
-                combat::death.system().after(COMBAT),
+                combat::death.system().after(Label::Combat),
             )
             // Movement
-            .on_state_update(PHYSICS_UPDATE, AppState::Dungeon, physics::update.system())
-            .on_state_update(VIEW_STARTUP, AppState::Dungeon, view::spawn_views.system())
-            .on_state_update(VIEW_UPDATE, AppState::Dungeon, view::sync_views.system())
+            .on_state_update(
+                Stage::PhysicsUpdate,
+                AppState::Dungeon,
+                physics::update.system(),
+            )
+            // View
+            .on_state_update(
+                Stage::PreViewUpdate,
+                AppState::Dungeon,
+                view::spawn_views.system(),
+            )
+            .on_state_update(
+                Stage::ViewUpdate,
+                AppState::Dungeon,
+                view::sync_views.system(),
+            )
             .on_state_exit(
-                APPSTATE_UPDATE,
+                Stage::Update,
                 AppState::Dungeon,
                 crate::core::despawn_all::<StateCleanup>.system(),
             );

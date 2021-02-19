@@ -7,11 +7,6 @@ use bevy::{
 mod core;
 mod dungeon;
 
-pub const APPSTATE_UPDATE: &str = "AppStateUpdate";
-pub const PHYSICS_UPDATE: &str = "PhysicsUpdate";
-pub const VIEW_STARTUP: &str = "ViewSetup";
-pub const VIEW_UPDATE: &str = "ViewStage";
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AppState {
     Dungeon,
@@ -39,21 +34,25 @@ fn main() {
         .insert_resource(ClearColor(Color::BLACK))
         // Stages
         .add_stage_before(
-            stage::UPDATE,
-            APPSTATE_UPDATE,
+            CoreStage::Update,
+            dungeon::Stage::Update,
             StateStage::<AppState>::default(),
         )
         .add_stage_after(
-            APPSTATE_UPDATE,
-            PHYSICS_UPDATE,
+            dungeon::Stage::Update,
+            dungeon::Stage::PhysicsUpdate,
             StateStage::<AppState>::default(),
         )
         .add_stage_after(
-            PHYSICS_UPDATE,
-            VIEW_STARTUP,
+            dungeon::Stage::PhysicsUpdate,
+            dungeon::Stage::PreViewUpdate,
             StateStage::<AppState>::default(),
         )
-        .add_stage_after(VIEW_STARTUP, VIEW_UPDATE, StateStage::<AppState>::default())
+        .add_stage_after(
+            dungeon::Stage::PreViewUpdate,
+            dungeon::Stage::ViewUpdate,
+            StateStage::<AppState>::default(),
+        )
         // App State
         .insert_resource(State::new(AppState::Dungeon))
         // State Plugins
