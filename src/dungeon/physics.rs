@@ -82,13 +82,13 @@ pub fn update(
         }
 
         let mut coords = coordinates.get_mut(entity).unwrap();
-        let target_coords = Coords(coords.0 + step.direction);
+        let target_coords = coords.0 + step.direction;
 
-        if !state.is_blocked(target_coords.0) {
+        if !state.is_blocked(target_coords) {
             state.unblock(coords.0);
-            state.block(target_coords.0);
+            state.block(target_coords);
 
-            coords.0 = target_coords.0;
+            coords.0 = target_coords;
         }
 
         step.direction = Vec2i::zero();
