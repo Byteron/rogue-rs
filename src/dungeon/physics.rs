@@ -94,5 +94,10 @@ pub fn update(
         step.direction = Vec2i::zero();
     }
 
-    println!("PysicsFrame: {:?}", start.elapsed());
+    println!(
+        "PysicsFrame: {:?}, Bodies: {}, Movers: {}",
+        start.elapsed(),
+        coordinates.iter_mut().count(),
+        movers.iter_mut().count()
+    );
 }

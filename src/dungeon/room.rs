@@ -6,6 +6,13 @@ pub struct Room {
 }
 
 impl Room {
+    pub fn contains(&self, coords: Vec2i) -> bool {
+        coords.x >= self.position.x
+            && coords.y >= self.position.y
+            && coords.x < self.end().x
+            && coords.y < self.end().y
+    }
+
     pub fn end(&self) -> Vec2i {
         self.position + self.size
     }

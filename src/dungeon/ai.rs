@@ -17,6 +17,7 @@ pub fn goblin_ai_movement(
     players: Query<&Coords, With<Player>>,
 ) {
     let start = Instant::now();
+    let mut calculated = 0;
 
     let mut rng = rand::thread_rng();
 
@@ -27,6 +28,8 @@ pub fn goblin_ai_movement(
     }
 
     for _ in event_reader.iter() {
+        calculated += query.iter_mut().count();
+
         'goblin: for (mut step, mut attack, goblin_coords) in query.iter_mut() {
             for (n_dir, n_coords) in goblin_coords.get_neighbors().iter() {
                 if attack_coordinates.contains(&n_coords.0) {
@@ -47,5 +50,5 @@ pub fn goblin_ai_movement(
         }
     }
 
-    println!("AIFrame: {:?}", start.elapsed());
+    println!("AIFrame: {:?}, Calculated: {}", start.elapsed(), calculated);
 }

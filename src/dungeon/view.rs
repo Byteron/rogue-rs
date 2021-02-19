@@ -1,71 +1,90 @@
-use bevy::prelude::*;
+use std::time::Instant;
+
+use bevy::{prelude::*, render::render_graph::base::MainPass};
+
+use crate::core::math::Vec2i;
 
 use super::{
-    actor::ActorType,
     bob::{Coords, Layer},
     grid::Grid,
-    images::{ActorImages, TileImages},
-    tile::TileType,
-    StateCleanup,
+    player::Player,
+    room::Room,
 };
 
-pub struct ViewAnchor(pub Option<Entity>);
-
-pub struct View;
-
-pub fn sync_views(
+pub fn sync(
     grid: Res<Grid>,
-    anchors: Query<(&Coords, &Layer, &ViewAnchor), Or<(Changed<Coords>, Changed<ViewAnchor>)>>,
-    mut views: Query<&mut Transform, With<View>>,
+    players: Query<&Coords, With<Player>>,
+    mut query: Query<(&mut Transform, &Coords, &Layer)>,
 ) {
-    for (coords, layer, anchor) in anchors.iter() {
-        if let Some(entity) = anchor.0 {
-            if let Ok(mut view_transform) = views.get_mut(entity) {
-                let position = grid.map_to_world(coords.0);
-                view_transform.translation =
-                    Vec3::new(position.x as f32, position.y as f32, layer.0 as f32);
+    let start = Instant::now();
+
+    let center = players.iter().next().unwrap();
+    let extents = Vec2i::new(9, 5);
+
+    let room = Room {
+        position: center.0 - extents,
+        size: extents * 2,
+    };
+
+    for (mut transform, coords, layer) in query.iter_mut() {
+        if room.contains(coords.0) {
+            let position = grid.map_to_world(coords.0);
+
+            transform.translation = Vec3::new(position.x as f32, position.y as f32, layer.0 as f32);
+        }
+    }
+
+    println!("SyncFrame: {:?}", start.elapsed(),);
+}
+
+pub fn update(
+    commands: &mut Commands,
+    views: Query<&Sprite>,
+    players: Query<&Coords, With<Player>>,
+    mut query: Query<(Entity, &Transform, &Coords, &Handle<ColorMaterial>)>,
+) {
+    let start = Instant::now();
+
+    for center in players.iter() {
+        let extents = Vec2i::new(10, 6);
+
+        let room = Room {
+            position: center.0 - extents,
+            size: extents * 2,
+        };
+
+        for (entity, transform, coords, material) in query.iter_mut() {
+            if !room.contains(coords.0) {
+                if let Ok(_) = views.get(entity) {
+                    commands.remove_one::<Sprite>(entity);
+                    commands.remove_one::<Handle<Mesh>>(entity);
+                    commands.remove_one::<Visible>(entity);
+                    commands.remove_one::<MainPass>(entity);
+                    commands.remove_one::<RenderPipelines>(entity);
+                    commands.remove_one::<Draw>(entity);
+                }
+            } else {
+                if let Err(_) = views.get(entity) {
+                    commands.insert(
+                        entity,
+                        SpriteBundle {
+                            material: material.clone(),
+                            transform: *transform,
+                            sprite: Sprite {
+                                size: Vec2::new(64.0, 64.0),
+                                resize_mode: SpriteResizeMode::Manual,
+                            },
+                            ..Default::default()
+                        },
+                    );
+                }
             }
         }
     }
-}
 
-pub fn spawn_views(
-    commands: &mut Commands,
-    grid: Res<Grid>,
-    actor_images: Res<ActorImages>,
-    tile_images: Res<TileImages>,
-    actors: Query<(Entity, &ActorType), Added<ActorType>>,
-    tiles: Query<(Entity, &TileType), Added<TileType>>,
-    mut anchors: Query<&mut ViewAnchor, Added<ViewAnchor>>,
-) {
-    for (entity, actor) in actors.iter() {
-        let view = create_view(commands, &grid, actor_images.get(*actor));
-        if let Ok(mut anchor) = anchors.get_mut(entity) {
-            anchor.0 = Some(view);
-        }
-    }
-
-    for (entity, tile) in tiles.iter() {
-        let view = create_view(commands, &grid, tile_images.get(*tile));
-        if let Ok(mut anchor) = anchors.get_mut(entity) {
-            anchor.0 = Some(view);
-        }
-    }
-}
-
-fn create_view(commands: &mut Commands, grid: &Grid, material: Handle<ColorMaterial>) -> Entity {
-    commands
-        .spawn(SpriteBundle {
-            material,
-            transform: Transform::from_translation(Vec3::zero()),
-            sprite: Sprite {
-                size: grid.cell_size.as_f32(),
-                resize_mode: SpriteResizeMode::Manual,
-            },
-            ..Default::default()
-        })
-        .with(View)
-        .with(StateCleanup)
-        .current_entity()
-        .unwrap()
+    println!(
+        "ViewFrame: {:?}, Sprites: {}",
+        start.elapsed(),
+        query.iter().count()
+    );
 }

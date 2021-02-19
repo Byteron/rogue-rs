@@ -17,7 +17,6 @@ pub fn input(
     mut query: Query<(&mut Step, &mut Attack, &mut ActionTimer, &mut Facing), With<Player>>,
 ) {
     for (mut step, mut attack, mut timer, mut facing) in query.iter_mut() {
-
         if !timer.0.finished() {
             continue;
         }

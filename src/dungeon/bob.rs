@@ -2,8 +2,6 @@ use bevy::prelude::*;
 
 use crate::core::math::Vec2i;
 
-use super::view::ViewAnchor;
-
 pub struct Coords(pub Vec2i);
 
 impl Coords {
@@ -22,16 +20,16 @@ pub struct Layer(pub i32);
 #[derive(Bundle)]
 pub struct BoardObjectBundle {
     pub coords: Coords,
+    pub transform: Transform,
     pub layer: Layer,
-    pub view_anchor: ViewAnchor,
 }
 
 impl Default for BoardObjectBundle {
     fn default() -> Self {
         BoardObjectBundle {
             coords: Coords(Vec2i::zero()),
+            transform: Transform::default(),
             layer: Layer(0),
-            view_anchor: ViewAnchor(None),
         }
     }
 }

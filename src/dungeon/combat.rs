@@ -1,7 +1,7 @@
 use crate::core::math::Vec2i;
 use bevy::prelude::*;
 
-use super::{bob::Coords, view::ViewAnchor};
+use super::bob::Coords;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Attitude {
@@ -112,14 +112,10 @@ pub fn attack(
     }
 }
 
-pub fn death(commands: &mut Commands, query: Query<(Entity, &ViewAnchor, &Health)>) {
-    for (entity, anchor, health) in query.iter() {
+pub fn death(commands: &mut Commands, query: Query<(Entity, &Health)>) {
+    for (entity, health) in query.iter() {
         if !health.is_empty() {
             continue;
-        }
-
-        if let Some(view) = anchor.0 {
-            commands.despawn(view);
         }
 
         commands.despawn(entity);
