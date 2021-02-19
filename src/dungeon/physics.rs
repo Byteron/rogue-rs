@@ -1,11 +1,29 @@
+use crate::core::math::{Rect2i, Vec2i};
 use bevy::{prelude::*, utils::HashSet};
+use std::time::Instant;
 
-use crate::core::math::Vec2i;
-
-use super::bob::Coords;
+use super::{bob::Coords, Viewshed};
 
 pub struct PhysicsState {
     collider: HashSet<Vec2i>,
+}
+
+impl PhysicsState {
+    pub fn is_blocked(&self, coords: Vec2i) -> bool {
+        self.collider.contains(&coords)
+    }
+
+    fn block(&mut self, coords: Vec2i) {
+        self.collider.insert(coords);
+    }
+
+    fn unblock(&mut self, coords: Vec2i) {
+        self.collider.remove(&coords);
+    }
+
+    fn clear(&mut self) {
+        self.collider.clear();
+    }
 }
 
 impl Default for PhysicsState {
@@ -50,6 +68,8 @@ pub fn update(
     mut coordinates: Query<&mut Coords, With<Solid>>,
     mut movers: Query<(Entity, &mut Step), With<Solid>>,
 ) {
+    let start = Instant::now();
+
     state.collider.clear();
 
     for coords in coordinates.iter_mut() {
@@ -73,4 +93,6 @@ pub fn update(
 
         step.direction = Vec2i::zero();
     }
+
+    println!("PysicsFrame: {:?}", start.elapsed());
 }

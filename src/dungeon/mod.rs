@@ -130,7 +130,7 @@ impl Plugin for DungeonPlugin {
 fn setup(commands: &mut Commands, grid: Res<Grid>) {
     let room = Room {
         position: Vec2i::new(0, 0),
-        size: Vec2i::new(19, 11),
+        size: Vec2i::new(38, 28),
     };
 
     commands

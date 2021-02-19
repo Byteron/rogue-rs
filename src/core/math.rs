@@ -129,6 +129,17 @@ impl Mul<Vec2i> for Vec2i {
     }
 }
 
+impl Mul<i32> for Vec2i {
+    type Output = Vec2i;
+
+    fn mul(self, rhs: i32) -> Self::Output {
+        Vec2i {
+            x: self.x * rhs,
+            y: self.y * rhs,
+        }
+    }
+}
+
 impl Div<Vec2i> for Vec2i {
     type Output = Vec2i;
 

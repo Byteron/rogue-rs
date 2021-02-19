@@ -7,15 +7,13 @@ use super::view::ViewAnchor;
 pub struct Coords(pub Vec2i);
 
 impl Coords {
-    pub fn get_neighbors(&self) -> Vec<(Vec2i, Coords)> {
-        let mut neighbors: Vec<(Vec2i, Coords)> = Vec::default();
-
-        neighbors.push((Vec2i::up(), Coords(self.0 + Vec2i::up())));
-        neighbors.push((Vec2i::down(), Coords(self.0 + Vec2i::down())));
-        neighbors.push((Vec2i::left(), Coords(self.0 + Vec2i::left())));
-        neighbors.push((Vec2i::right(), Coords(self.0 + Vec2i::right())));
-
-        neighbors
+    pub fn get_neighbors(&self) -> [(Vec2i, Coords); 4] {
+        [
+            (Vec2i::up(), Coords(self.0 + Vec2i::up())),
+            (Vec2i::down(), Coords(self.0 + Vec2i::down())),
+            (Vec2i::left(), Coords(self.0 + Vec2i::left())),
+            (Vec2i::right(), Coords(self.0 + Vec2i::right())),
+        ]
     }
 }
 
