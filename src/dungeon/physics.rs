@@ -1,8 +1,8 @@
-use crate::core::math::{Rect2i, Vec2i};
+use crate::core::math::Vec2i;
 use bevy::{prelude::*, utils::HashSet};
 use std::time::Instant;
 
-use super::{bob::Coords, Viewshed};
+use super::bob::Coords;
 
 pub struct PhysicsState {
     collider: HashSet<Vec2i>,
@@ -70,10 +70,10 @@ pub fn update(
 ) {
     let start = Instant::now();
 
-    state.collider.clear();
+    state.clear();
 
     for coords in coordinates.iter_mut() {
-        state.collider.insert(coords.0);
+        state.block(coords.0);
     }
 
     for (entity, mut step) in movers.iter_mut() {
@@ -84,9 +84,9 @@ pub fn update(
         let mut coords = coordinates.get_mut(entity).unwrap();
         let target_coords = Coords(coords.0 + step.direction);
 
-        if !state.collider.contains(&target_coords.0) {
-            state.collider.remove(&coords.0);
-            state.collider.insert(target_coords.0);
+        if !state.is_blocked(target_coords.0) {
+            state.unblock(coords.0);
+            state.block(target_coords.0);
 
             coords.0 = target_coords.0;
         }
