@@ -18,28 +18,36 @@ pub struct Attack {
 
 pub struct Health {
     max: i32,
-    value: i32,
+    current: i32,
 }
 
 impl Health {
     pub fn new(health: i32) -> Self {
         Health {
             max: health,
-            value: health,
+            current: health,
         }
     }
 
+    pub fn current(&self) -> i32 {
+        self.current
+    }
+
+    pub fn max(&self) -> i32 {
+        self.max
+    }
+
     pub fn hurt(&mut self, damage: i32) {
-        self.value -= damage;
-        if self.value <= 0 {
-            self.value = 0;
+        self.current -= damage;
+        if self.current <= 0 {
+            self.current = 0;
         }
     }
 
     pub fn heal(&mut self, amount: i32) {
-        self.value += amount;
-        if self.value > self.max {
-            self.value = self.max;
+        self.current += amount;
+        if self.current > self.max {
+            self.current = self.max;
         }
     }
 
@@ -48,11 +56,11 @@ impl Health {
     }
 
     pub fn is_full(&self) -> bool {
-        self.value == self.max
+        self.current == self.max
     }
 
     pub fn is_empty(&self) -> bool {
-        self.value == 0
+        self.current == 0
     }
 }
 
