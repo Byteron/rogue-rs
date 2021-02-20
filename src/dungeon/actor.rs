@@ -11,6 +11,7 @@ pub enum ActorType {
 pub struct Facing {
     pub direction: Vec2i,
 }
+
 pub struct ActionTimer(pub Timer);
 
 #[derive(Bundle)]
