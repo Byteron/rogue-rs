@@ -45,11 +45,6 @@ fn main() {
         )
         .add_stage_after(
             dungeon::Stage::PhysicsUpdate,
-            dungeon::Stage::PreViewUpdate,
-            StateStage::<AppState>::default(),
-        )
-        .add_stage_after(
-            dungeon::Stage::PreViewUpdate,
             dungeon::Stage::ViewUpdate,
             StateStage::<AppState>::default(),
         )

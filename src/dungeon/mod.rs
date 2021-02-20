@@ -28,12 +28,12 @@ use bevy::prelude::*;
 use bob::BoardObjectBundle;
 use combat::Attitude;
 use rand::Rng;
+use view::Viewshed;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, StageLabel)]
 pub enum Stage {
     Update,
     PhysicsUpdate,
-    PreViewUpdate,
     ViewUpdate,
 }
 
@@ -128,6 +128,9 @@ fn setup(
                 grid.map_to_world(room.center()).extend(1000).as_f32(),
             ),
             ..OrthographicCameraBundle::new_2d()
+        })
+        .with(Viewshed {
+            size: Vec2i::new(19, 11),
         })
         .with(Coords(room.center()))
         .with(StateCleanup);
