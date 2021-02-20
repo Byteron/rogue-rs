@@ -43,6 +43,7 @@ pub enum Label {
     Input,
     Ai,
     Combat,
+    View,
 }
 
 struct StateCleanup;
@@ -101,8 +102,16 @@ impl Plugin for DungeonPlugin {
                 physics::update.system(),
             )
             // View
-            .on_state_update(Stage::ViewUpdate, AppState::Dungeon, view::update.system())
-            .on_state_update(Stage::ViewUpdate, AppState::Dungeon, view::sync.system())
+            .on_state_update(
+                Stage::ViewUpdate,
+                AppState::Dungeon,
+                view::update.system().label(Label::View),
+            )
+            .on_state_update(
+                Stage::ViewUpdate,
+                AppState::Dungeon,
+                view::sync.system().after(Label::View),
+            )
             .on_state_exit(
                 Stage::Update,
                 AppState::Dungeon,
