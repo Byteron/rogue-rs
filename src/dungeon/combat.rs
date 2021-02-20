@@ -107,11 +107,11 @@ pub fn attack(
 
         for (other_coords, mut health) in actors.iter_mut() {
             if target_coords.0 == other_coords.0 {
-                let value = health.value;
+                let old = health.current();
                 health.hurt(strength.0);
                 println!(
                     "Attack at {:?}, dealt {} Damage. ({} -> {})",
-                    target_coords.0, strength.0, value, health.value
+                    target_coords.0, strength.0, old, health.current()
                 );
             }
         }
