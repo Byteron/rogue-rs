@@ -15,7 +15,7 @@ use self::{
     bob::{Coords, Layer},
     combat::CombatBundle,
     grid::Grid,
-    images::{ActorImages, TileImages},
+    images::Images,
     physics::{KinematicBodyBundle, PhysicsState, Solid},
     player::Player,
     room::Room,
@@ -55,8 +55,7 @@ impl Plugin for DungeonPlugin {
         app.add_event::<AiTickEvent>()
             .insert_resource(Grid::new(64, 64))
             .insert_resource(PhysicsState::default())
-            .init_resource::<ActorImages>()
-            .init_resource::<TileImages>()
+            .init_resource::<Images>()
             .on_state_enter(Stage::Update, AppState::Dungeon, setup.system())
             .on_state_update(
                 Stage::Update,
@@ -120,12 +119,7 @@ impl Plugin for DungeonPlugin {
     }
 }
 
-fn setup(
-    commands: &mut Commands,
-    grid: Res<Grid>,
-    actor_images: Res<ActorImages>,
-    tile_images: Res<TileImages>,
-) {
+fn setup(commands: &mut Commands, grid: Res<Grid>, images: Res<Images>) {
     let room = Room {
         position: Vec2i::new(0, 0),
         size: Vec2i::new(200, 200),
@@ -144,11 +138,7 @@ fn setup(
         .with(Coords(room.center()))
         .with(StateCleanup);
 
-    spawn_player(
-        commands,
-        Coords(room.center()),
-        actor_images.get(ActorType::Human),
-    );
+    spawn_player(commands, Coords(room.center()), images.get("Human"));
 
     let mut rng = rand::thread_rng();
 
@@ -157,7 +147,7 @@ fn setup(
             spawn_tile(
                 commands,
                 Coords(*coords),
-                tile_images.get(TileType::Floor),
+                images.get("Floor"),
                 TileType::Floor,
                 false,
             );
@@ -165,7 +155,7 @@ fn setup(
             spawn_tile(
                 commands,
                 Coords(*coords),
-                tile_images.get(TileType::Floor),
+                images.get("Floor"),
                 TileType::Floor,
                 false,
             );
@@ -173,7 +163,7 @@ fn setup(
             spawn_tile(
                 commands,
                 Coords(*coords),
-                tile_images.get(TileType::Wall),
+                images.get("Wall"),
                 TileType::Wall,
                 true,
             );
@@ -181,7 +171,7 @@ fn setup(
             spawn_tile(
                 commands,
                 Coords(*coords),
-                tile_images.get(TileType::Wall),
+                images.get("Wall"),
                 TileType::Wall,
                 true,
             );
@@ -189,7 +179,7 @@ fn setup(
             spawn_tile(
                 commands,
                 Coords(*coords),
-                tile_images.get(TileType::Floor),
+                images.get("Floor"),
                 TileType::Floor,
                 false,
             );
@@ -206,7 +196,7 @@ fn setup(
             spawn_enemy(
                 commands,
                 Coords(*coords),
-                actor_images.get(ActorType::Goblin),
+                images.get("Goblin"),
                 ActorType::Goblin,
             );
         }
