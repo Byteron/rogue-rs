@@ -13,7 +13,7 @@ impl Images {
 impl FromResources for Images {
     fn from_resources(resources: &Resources) -> Self {
         let mut materials = resources.get_mut::<Assets<ColorMaterial>>().unwrap();
-        let assets = resources.get_mut::<AssetServer>().unwrap();
+        let assets = resources.get::<AssetServer>().unwrap();
 
         let mut map: HashMap<&'static str, Handle<ColorMaterial>> = HashMap::default();
 

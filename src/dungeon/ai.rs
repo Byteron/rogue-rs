@@ -5,20 +5,22 @@ use rand::Rng;
 
 use crate::core::math::Vec2i;
 
-use super::{bob::Coords, combat::Attack, physics::Step, player::Player};
+use super::{
+    action::{Action, Actions},
+    bob::Coords,
+    player::Controllable,
+};
 
-pub struct AiTickEvent;
+pub struct TickEvent;
 
 pub struct GoblinAi;
 
 pub fn goblin_ai_movement(
-    mut event_reader: EventReader<AiTickEvent>,
-    mut query: Query<(&mut Step, &mut Attack, &Coords), With<GoblinAi>>,
-    players: Query<&Coords, With<Player>>,
+    mut actions: ResMut<Actions>,
+    mut event_reader: EventReader<TickEvent>,
+    mut query: Query<(Entity, &Coords), With<GoblinAi>>,
+    players: Query<&Coords, With<Controllable>>,
 ) {
-    let start = Instant::now();
-    let mut calculated = 0;
-
     let mut rng = rand::thread_rng();
 
     let mut attack_coordinates: HashSet<Vec2i> = HashSet::default();
@@ -28,13 +30,11 @@ pub fn goblin_ai_movement(
     }
 
     for _ in event_reader.iter() {
-        calculated += query.iter_mut().count();
-
-        'goblin: for (mut step, mut attack, goblin_coords) in query.iter_mut() {
+        'goblin: for (goblin_entity, goblin_coords) in query.iter_mut() {
             for (n_dir, n_coords) in goblin_coords.get_neighbors().iter() {
                 if attack_coordinates.contains(&n_coords.0) {
                     println!("Goblin found Player!, Attacking: {:?}", n_dir);
-                    attack.direction = *n_dir;
+                    actions.push(Action::Attack(goblin_entity));
                     continue 'goblin;
                 }
             }
@@ -46,9 +46,12 @@ pub fn goblin_ai_movement(
                 y = rng.gen_range(-1..=1);
             }
 
-            step.direction = Vec2i::new(x, y);
+            actions.push(Action::Move(
+                goblin_entity,
+                Vec2i::new(x, y),
+            ));
         }
-    }
 
-    println!("AIFrame: {:?}, Calculated: {}", start.elapsed(), calculated);
+        actions.queue(Action::Delay);
+    }
 }

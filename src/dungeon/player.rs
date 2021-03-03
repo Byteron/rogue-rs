@@ -2,46 +2,34 @@ use bevy::prelude::*;
 
 use crate::core::math::Vec2i;
 
-use super::{
-    actor::{ActionTimer, Facing},
-    ai::AiTickEvent,
-    combat::Attack,
-    physics::Step,
-};
+use super::{action::{Action, Actions}, bob::Facing};
 
-pub struct Player;
+pub struct Controllable;
 
 pub fn input(
     input: Res<Input<KeyCode>>,
-    mut events: ResMut<Events<AiTickEvent>>,
-    mut query: Query<(&mut Step, &mut Attack, &mut ActionTimer, &mut Facing), With<Player>>,
+    mut actions: ResMut<Actions>,
+    players: Query<(Entity, &Facing), With<Controllable>>,
 ) {
-    for (mut step, mut attack, mut timer, mut facing) in query.iter_mut() {
-        if !timer.0.finished() {
-            continue;
-        }
-
-        if input.pressed(KeyCode::F) {
-            attack.direction = facing.direction;
-            timer.0.reset();
-            events.send(AiTickEvent);
+    for (entity, facing) in players.iter() {
+        if actions.is_locked() {
             return;
         }
 
         let direction = get_input_direction(&input);
 
-        if !timer.0.finished() || direction == Vec2i::zero() {
-            continue;
-        }
-
-        if facing.direction == direction {
-            step.direction = direction;
-            timer.0.reset();
-            events.send(AiTickEvent);
-        } else {
-            facing.direction = direction;
-            timer.0.reset();
-            println!("Faced to {:?}", direction);
+        if direction != Vec2i::zero() && facing.direction == direction {
+            actions.queue(Action::Move(entity, direction));
+            actions.lock_and_tick();
+        } else if direction != Vec2i::zero() {
+            actions.queue(Action::Face(entity, direction));
+            actions.lock();
+        } else if input.pressed(KeyCode::F) {
+            actions.queue(Action::PlayerAttack(entity));
+            actions.lock_and_tick();
+        } else if input.pressed(KeyCode::W) {
+            actions.queue(Action::Wait);
+            actions.lock_and_tick();
         }
     }
 }

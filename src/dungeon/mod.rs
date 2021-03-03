@@ -1,49 +1,37 @@
-mod actor;
+mod action;
 mod ai;
 mod bob;
-mod combat;
+mod damage;
 mod grid;
 mod images;
 mod physics;
 mod player;
 mod room;
-mod tile;
-mod view;
+mod tween;
 
-use self::{
-    actor::ActorBundle,
-    bob::{Coords, Layer},
-    combat::CombatBundle,
-    grid::Grid,
-    images::Images,
-    physics::{KinematicBodyBundle, PhysicsState, Solid},
-    player::Player,
-    room::Room,
-    tile::TileType,
-};
+use self::{action::Actions, ai::{GoblinAi, TickEvent}, bob::{Coords, Layer, SpatialMap, update_spatial_map}, damage::{AttackState, Damage, DamageEvent, Damageable}, grid::Grid, images::Images, physics::{KinematicBodyBundle, MoveEvent, PhysicsState, Solid}, player::Controllable, room::Room, tween::TweenPlugin};
 use crate::{core::math::Vec2i, AppState};
-use actor::ActorType;
-use ai::{AiTickEvent, GoblinAi};
 use bevy::prelude::*;
 use bob::BoardObjectBundle;
-use combat::Attitude;
 use rand::Rng;
-use view::Viewshed;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, StageLabel)]
 pub enum Stage {
     Update,
+    DamageUpdate,
     PhysicsUpdate,
-    ViewUpdate,
+    SyncUpdate,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemLabel)]
 pub enum Label {
-    Tick,
     Input,
     Ai,
-    Combat,
-    View,
+    Actions,
+    Movement,
+    Tweening,
+    DamageEvent,
+    DamageUpdate,
 }
 
 struct StateCleanup;
@@ -52,16 +40,17 @@ pub struct DungeonPlugin;
 
 impl Plugin for DungeonPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_event::<AiTickEvent>()
+        app.add_plugin(TweenPlugin)
+            .add_event::<DamageEvent>()
+            .add_event::<MoveEvent>()
+            .add_event::<TickEvent>()
             .insert_resource(Grid::new(64, 64))
+            .insert_resource(Actions::default())
+            .insert_resource(SpatialMap::default())
+            .insert_resource(AttackState::default())
             .insert_resource(PhysicsState::default())
             .init_resource::<Images>()
             .on_state_enter(Stage::Update, AppState::Dungeon, setup.system())
-            .on_state_update(
-                Stage::Update,
-                AppState::Dungeon,
-                actor::tick.system().label(Label::Tick),
-            )
             // Payer Input
             .on_state_update(
                 Stage::Update,
@@ -69,7 +58,6 @@ impl Plugin for DungeonPlugin {
                 player::input
                     .system()
                     .label(Label::Input)
-                    .after(Label::Tick),
             )
             // AI
             .on_state_update(
@@ -80,37 +68,59 @@ impl Plugin for DungeonPlugin {
                     .label(Label::Ai)
                     .after(Label::Input),
             )
-            // Combat
+            // Commands
             .on_state_update(
                 Stage::Update,
                 AppState::Dungeon,
-                combat::attack
+                action::actions
                     .system()
-                    .label(Label::Combat)
+                    .label(Label::Actions)
                     .after(Label::Ai),
             )
+            // Combat
             .on_state_update(
-                Stage::Update,
+                Stage::DamageUpdate,
                 AppState::Dungeon,
-                combat::death.system().after(Label::Combat),
+                damage::damage.system().label(Label::DamageEvent),
+            )
+            .on_state_update(
+                Stage::DamageUpdate,
+                AppState::Dungeon,
+                damage::update_state
+                    .system()
+                    .label(Label::DamageUpdate)
+                    .after(Label::DamageEvent),
+            )
+            .on_state_update(
+                Stage::DamageUpdate,
+                AppState::Dungeon,
+                damage::death.system().after(Label::DamageUpdate),
             )
             // Movement
             .on_state_update(
+                Stage::Update,
+                AppState::Dungeon,
+                physics::move_event
+                    .system()
+                    .label(Label::Movement)
+                    .after(Label::Actions),
+            )
+            .on_state_update(
+                Stage::Update,
+                AppState::Dungeon,
+                tween::tween.system()
+                    .system()
+                    .label(Label::Tweening)
+                    .after(Label::Movement)
+            )
+            .on_state_update(
                 Stage::PhysicsUpdate,
                 AppState::Dungeon,
-                physics::update.system(),
+                physics::update_state.system(),
             )
             // View
-            .on_state_update(
-                Stage::ViewUpdate,
-                AppState::Dungeon,
-                view::update.system().label(Label::View),
-            )
-            .on_state_update(
-                Stage::ViewUpdate,
-                AppState::Dungeon,
-                view::sync.system().after(Label::View),
-            )
+            .on_state_update(Stage::SyncUpdate, AppState::Dungeon, bob::update_position.system())
+            // .on_state_update(Stage::SyncUpdate, AppState::Dungeon, bob::update_spatial_map.system())
             .on_state_exit(
                 Stage::Update,
                 AppState::Dungeon,
@@ -119,24 +129,11 @@ impl Plugin for DungeonPlugin {
     }
 }
 
-fn setup(commands: &mut Commands, grid: Res<Grid>, images: Res<Images>) {
+fn setup(commands: &mut Commands, images: Res<Images>) {
     let room = Room {
         position: Vec2i::new(0, 0),
-        size: Vec2i::new(200, 200),
+        size: Vec2i::new(50, 50),
     };
-
-    commands
-        .spawn(OrthographicCameraBundle {
-            transform: Transform::from_translation(
-                grid.map_to_world(room.center()).extend(1000).as_f32(),
-            ),
-            ..OrthographicCameraBundle::new_2d()
-        })
-        .with(Viewshed {
-            size: Vec2i::new(19, 11),
-        })
-        .with(Coords(room.center()))
-        .with(StateCleanup);
 
     spawn_player(commands, Coords(room.center()), images.get("Human"));
 
@@ -144,45 +141,15 @@ fn setup(commands: &mut Commands, grid: Res<Grid>, images: Res<Images>) {
 
     for coords in room.coords().iter_mut() {
         if room.is_door(*coords) {
-            spawn_tile(
-                commands,
-                Coords(*coords),
-                images.get("Floor"),
-                TileType::Floor,
-                false,
-            );
+            spawn_tile(commands, Coords(*coords), images.get("Floor"), false);
         } else if room.is_entrance(*coords) {
-            spawn_tile(
-                commands,
-                Coords(*coords),
-                images.get("Floor"),
-                TileType::Floor,
-                false,
-            );
+            spawn_tile(commands, Coords(*coords), images.get("Floor"), false);
         } else if room.is_border(*coords) {
-            spawn_tile(
-                commands,
-                Coords(*coords),
-                images.get("Wall"),
-                TileType::Wall,
-                true,
-            );
+            spawn_tile(commands, Coords(*coords), images.get("Wall"), true);
         } else if rng.gen_bool(0.1) {
-            spawn_tile(
-                commands,
-                Coords(*coords),
-                images.get("Wall"),
-                TileType::Wall,
-                true,
-            );
+            spawn_tile(commands, Coords(*coords), images.get("Wall"), true);
         } else {
-            spawn_tile(
-                commands,
-                Coords(*coords),
-                images.get("Floor"),
-                TileType::Floor,
-                false,
-            );
+            spawn_tile(commands, Coords(*coords), images.get("Floor"), false);
         }
     }
 
@@ -193,12 +160,7 @@ fn setup(commands: &mut Commands, grid: Res<Grid>, images: Res<Images>) {
             && !room.is_door(*coords)
             && !room.is_center(*coords)
         {
-            spawn_enemy(
-                commands,
-                Coords(*coords),
-                images.get("Goblin"),
-                ActorType::Goblin,
-            );
+            spawn_enemy(commands, Coords(*coords), images.get("Goblin"));
         }
     }
 }
@@ -211,11 +173,20 @@ fn spawn_player(commands: &mut Commands, coords: Coords, material: Handle<ColorM
             layer: Layer(10),
             ..Default::default()
         })
-        .with_bundle(ActorBundle::default())
-        .with_bundle(CombatBundle::new(100, 12, Attitude::Neutral))
+        .with_bundle(SpriteBundle {
+            material,
+            transform: Transform::default(),
+            sprite: Sprite {
+                size: Vec2::new(64.0, 64.0),
+                resize_mode: SpriteResizeMode::Manual,
+            },
+            ..Default::default()
+        })
         .with_bundle(KinematicBodyBundle::default())
-        .with(material)
-        .with(Player)
+        .with_bundle(OrthographicCameraBundle::new_2d())
+        .with(Damageable::new(200))
+        .with(Damage::new(12))
+        .with(Controllable)
         .with(StateCleanup);
 }
 
@@ -223,7 +194,6 @@ fn spawn_tile(
     commands: &mut Commands,
     coords: Coords,
     material: Handle<ColorMaterial>,
-    tile_type: TileType,
     solid: bool,
 ) {
     // Actual Tile Entity
@@ -233,8 +203,16 @@ fn spawn_tile(
             layer: Layer(0),
             ..Default::default()
         })
-        .with(material)
-        .with(tile_type)
+        .with_bundle(SpriteBundle {
+            material,
+            transform: Transform::default(),
+            sprite: Sprite {
+                size: Vec2::new(64.0, 64.0),
+                resize_mode: SpriteResizeMode::Manual,
+            },
+            ..Default::default()
+        })
+        .with(Damageable::new(10))
         .with(StateCleanup)
         .current_entity()
         .unwrap();
@@ -244,12 +222,7 @@ fn spawn_tile(
     }
 }
 
-fn spawn_enemy(
-    commands: &mut Commands,
-    coords: Coords,
-    material: Handle<ColorMaterial>,
-    actor_type: ActorType,
-) {
+fn spawn_enemy(commands: &mut Commands, coords: Coords, material: Handle<ColorMaterial>) {
     // Actual Enemy Entity
     commands
         .spawn(BoardObjectBundle {
@@ -257,10 +230,17 @@ fn spawn_enemy(
             layer: Layer(10),
             ..Default::default()
         })
-        .with_bundle(ActorBundle::new(actor_type))
-        .with_bundle(CombatBundle::new(20, 3, Attitude::Hostile))
+        .with_bundle(SpriteBundle {
+            material,
+            transform: Transform::default(),
+            sprite: Sprite {
+                size: Vec2::new(64.0, 64.0),
+                resize_mode: SpriteResizeMode::Manual,
+            },
+            ..Default::default()
+        })
         .with_bundle(KinematicBodyBundle::default())
-        .with(material)
+        .with(Damageable::new(20))
         .with(GoblinAi)
         .with(StateCleanup);
 }

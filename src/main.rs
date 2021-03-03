@@ -40,12 +40,17 @@ fn main() {
         )
         .add_stage_after(
             dungeon::Stage::Update,
+            dungeon::Stage::DamageUpdate,
+            StateStage::<AppState>::default(),
+        )
+        .add_stage_after(
+            dungeon::Stage::DamageUpdate,
             dungeon::Stage::PhysicsUpdate,
             StateStage::<AppState>::default(),
         )
         .add_stage_after(
             dungeon::Stage::PhysicsUpdate,
-            dungeon::Stage::ViewUpdate,
+            dungeon::Stage::SyncUpdate,
             StateStage::<AppState>::default(),
         )
         // App State

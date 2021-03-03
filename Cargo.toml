@@ -8,8 +8,7 @@ edition = "2018"
 "rand" = "0.8.2"
 
 [dependencies.bevy]
-git = "https://github.com/bevyengine/bevy.git"
-rev = "c2a427f1a38db6b1d9798e631a7da7a8507fe18c"
+path = "../../Rust/bevy"
 
 [profile.dev]
 opt-level = 1

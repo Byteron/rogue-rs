@@ -1,103 +1,86 @@
 use crate::core::math::Vec2i;
 use bevy::{prelude::*, utils::HashSet};
-use std::time::Instant;
 
 use super::bob::Coords;
 
+pub struct MoveEvent {
+    pub entity: Entity,
+    pub position: Vec2i,
+}
+
 pub struct PhysicsState {
-    collider: HashSet<Vec2i>,
+    set: HashSet<Vec2i>,
 }
 
 impl PhysicsState {
     pub fn is_blocked(&self, coords: Vec2i) -> bool {
-        self.collider.contains(&coords)
+        self.set.contains(&coords)
     }
 
     fn block(&mut self, coords: Vec2i) {
-        self.collider.insert(coords);
+        self.set.insert(coords);
     }
 
     fn unblock(&mut self, coords: Vec2i) {
-        self.collider.remove(&coords);
+        self.set.remove(&coords);
     }
 
     fn clear(&mut self) {
-        self.collider.clear();
+        self.set.clear();
     }
 }
 
 impl Default for PhysicsState {
     fn default() -> Self {
         PhysicsState {
-            collider: HashSet::default(),
+            set: HashSet::default(),
         }
     }
 }
 
+
 pub struct Solid;
 
-pub struct Step {
-    pub direction: Vec2i,
-}
+pub struct Velocity(Vec2i);
 
-impl Default for Step {
+impl Default for Velocity {
     fn default() -> Self {
-        Step {
-            direction: Vec2i::zero(),
-        }
+        Velocity(Vec2i::zero())
     }
 }
 
 #[derive(Bundle)]
 pub struct KinematicBodyBundle {
-    pub step: Step,
+    pub velocity: Velocity,
     pub body: Solid,
 }
 
 impl Default for KinematicBodyBundle {
     fn default() -> Self {
         KinematicBodyBundle {
-            step: Step::default(),
+            velocity: Velocity::default(),
             body: Solid,
         }
     }
 }
 
-pub fn update(
+pub fn move_event(
+    mut event_reader: EventReader<MoveEvent>,
+    mut coordinates: Query<&mut Coords, With<Solid>>,
+) {
+    for event in event_reader.iter() {
+        let mut coords = coordinates.get_mut(event.entity).unwrap();
+        coords.0 = event.position;
+    }
+}
+
+pub fn update_state(
     mut state: ResMut<PhysicsState>,
     mut coordinates: Query<&mut Coords, With<Solid>>,
-    mut movers: Query<(Entity, &mut Step), With<Solid>>,
 ) {
-    let start = Instant::now();
-
     state.clear();
 
     for coords in coordinates.iter_mut() {
         state.block(coords.0);
     }
-
-    for (entity, mut step) in movers.iter_mut() {
-        if step.direction == Vec2i::zero() {
-            continue;
-        }
-
-        let mut coords = coordinates.get_mut(entity).unwrap();
-        let target_coords = coords.0 + step.direction;
-
-        if !state.is_blocked(target_coords) {
-            state.unblock(coords.0);
-            state.block(target_coords);
-
-            coords.0 = target_coords;
-        }
-
-        step.direction = Vec2i::zero();
-    }
-
-    println!(
-        "PysicsFrame: {:?}, Bodies: {}, Movers: {}",
-        start.elapsed(),
-        coordinates.iter_mut().count(),
-        movers.iter_mut().count()
-    );
 }
