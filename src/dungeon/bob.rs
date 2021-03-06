@@ -84,18 +84,18 @@ impl Default for SpatialMap {
 pub fn update_spatial_map(
     mut map: ResMut<SpatialMap>,
     query: Query<(Entity, &Coords), Changed<Coords>>,
-    removed: Query<(Entity, &Coords)>,
+    removed: RemovedComponents<Coords>,
 ) {
     for (entity, coords) in query.iter() {
         // Remove Removed
-        let removed_entities = removed.removed::<Entity>();
+        let removed_entities = removed.iter();
         for entity in removed_entities {
-            if let Some(pos) = map.coords.get(entity) {
+            if let Some(pos) = map.coords.get(&entity) {
                 let pos = *pos;
                 let vec = map.entities.get_mut(&pos).unwrap();
                 let mut remove: Vec<usize> = Vec::default();
                 for i in 0..vec.len() {
-                    if vec[i] == *entity {
+                    if vec[i] == entity {
                         remove.push(i);
                     }
                 }

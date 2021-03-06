@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 
 pub enum TweenMode {
@@ -37,12 +39,12 @@ impl Tween {
     }
 
     pub fn tick(&mut self, delta: f32) {
-        self.timer.tick(delta);
+        self.timer.tick(Duration::from_secs_f32(delta));
     }
 
     pub fn start(&mut self, duration: f32, mode: TweenMode) {
         self.mode = mode;
-        self.timer.set_duration(duration);
+        self.timer.set_duration(Duration::from_secs_f32(duration));
         self.timer.reset();
     }
 

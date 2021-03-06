@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use bevy::{prelude::*, utils::HashSet};
 use rand::Rng;
 

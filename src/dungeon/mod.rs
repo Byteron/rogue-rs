@@ -9,7 +9,7 @@ mod player;
 mod room;
 mod tween;
 
-use self::{action::Actions, ai::{GoblinAi, TickEvent}, bob::{Coords, Layer, SpatialMap, update_spatial_map}, damage::{AttackState, Damage, DamageEvent, Damageable}, grid::Grid, images::Images, physics::{KinematicBodyBundle, MoveEvent, PhysicsState, Solid}, player::Controllable, room::Room, tween::TweenPlugin};
+use self::{action::Actions, ai::{GoblinAi, TickEvent}, bob::{Coords, Layer, SpatialMap}, damage::{AttackState, Damage, DamageEvent, Damageable}, grid::Grid, images::Images, physics::{KinematicBodyBundle, MoveEvent, PhysicsState, Solid}, player::Controllable, room::Room, tween::TweenPlugin};
 use crate::{core::math::Vec2i, AppState};
 use bevy::prelude::*;
 use bob::BoardObjectBundle;
@@ -129,27 +129,27 @@ impl Plugin for DungeonPlugin {
     }
 }
 
-fn setup(commands: &mut Commands, images: Res<Images>) {
+fn setup(mut commands: Commands, images: Res<Images>) {
     let room = Room {
         position: Vec2i::new(0, 0),
-        size: Vec2i::new(50, 50),
+        size: Vec2i::new(100, 100),
     };
 
-    spawn_player(commands, Coords(room.center()), images.get("Human"));
+    spawn_player(&mut commands, Coords(room.center()), images.get("Human"));
 
     let mut rng = rand::thread_rng();
 
     for coords in room.coords().iter_mut() {
         if room.is_door(*coords) {
-            spawn_tile(commands, Coords(*coords), images.get("Floor"), false);
+            spawn_tile(&mut commands, Coords(*coords), images.get("Floor"), false);
         } else if room.is_entrance(*coords) {
-            spawn_tile(commands, Coords(*coords), images.get("Floor"), false);
+            spawn_tile(&mut commands, Coords(*coords), images.get("Floor"), false);
         } else if room.is_border(*coords) {
-            spawn_tile(commands, Coords(*coords), images.get("Wall"), true);
+            spawn_tile(&mut commands, Coords(*coords), images.get("Wall"), true);
         } else if rng.gen_bool(0.1) {
-            spawn_tile(commands, Coords(*coords), images.get("Wall"), true);
+            spawn_tile(&mut commands, Coords(*coords), images.get("Wall"), true);
         } else {
-            spawn_tile(commands, Coords(*coords), images.get("Floor"), false);
+            spawn_tile(&mut commands, Coords(*coords), images.get("Floor"), false);
         }
     }
 
@@ -160,7 +160,7 @@ fn setup(commands: &mut Commands, images: Res<Images>) {
             && !room.is_door(*coords)
             && !room.is_center(*coords)
         {
-            spawn_enemy(commands, Coords(*coords), images.get("Goblin"));
+            spawn_enemy(&mut commands, Coords(*coords), images.get("Goblin"));
         }
     }
 }
@@ -179,6 +179,7 @@ fn spawn_player(commands: &mut Commands, coords: Coords, material: Handle<ColorM
             sprite: Sprite {
                 size: Vec2::new(64.0, 64.0),
                 resize_mode: SpriteResizeMode::Manual,
+                ..Default::default()
             },
             ..Default::default()
         })
@@ -209,6 +210,7 @@ fn spawn_tile(
             sprite: Sprite {
                 size: Vec2::new(64.0, 64.0),
                 resize_mode: SpriteResizeMode::Manual,
+                ..Default::default()
             },
             ..Default::default()
         })
@@ -218,7 +220,7 @@ fn spawn_tile(
         .unwrap();
 
     if solid {
-        commands.insert_one(tile, Solid);
+        commands.insert(tile, Solid);
     }
 }
 
@@ -236,6 +238,7 @@ fn spawn_enemy(commands: &mut Commands, coords: Coords, material: Handle<ColorMa
             sprite: Sprite {
                 size: Vec2::new(64.0, 64.0),
                 resize_mode: SpriteResizeMode::Manual,
+                ..Default::default()
             },
             ..Default::default()
         })

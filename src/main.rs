@@ -1,6 +1,7 @@
 use crate::dungeon::DungeonPlugin;
 use bevy::{
     diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+    ecs::schedule::ReportExecutionOrderAmbiguities,
     prelude::*,
 };
 

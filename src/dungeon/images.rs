@@ -10,10 +10,11 @@ impl Images {
     }
 }
 
-impl FromResources for Images {
-    fn from_resources(resources: &Resources) -> Self {
-        let mut materials = resources.get_mut::<Assets<ColorMaterial>>().unwrap();
-        let assets = resources.get::<AssetServer>().unwrap();
+impl FromWorld for Images {
+    fn from_world(world: &mut World) -> Self {
+        let cell = world.cell();
+        let mut materials = cell.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
+        let assets = cell.get_resource::<AssetServer>().unwrap();
 
         let mut map: HashMap<&'static str, Handle<ColorMaterial>> = HashMap::default();
 

@@ -70,7 +70,7 @@ pub fn actions(
     mut tick_events: ResMut<Events<TickEvent>>,
     mut query: Query<(&Coords, &mut Facing)>
 ) {
-    actions.timer.tick(time.delta_seconds());
+    actions.timer.tick(time.delta());
 
     if !actions.timer.finished() {
         return;

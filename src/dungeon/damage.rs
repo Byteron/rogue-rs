@@ -151,7 +151,7 @@ pub fn update_state(
     }
 }
 
-pub fn death(commands: &mut Commands, damageables: Query<(Entity, &Damageable)>) {
+pub fn death(mut commands: Commands, damageables: Query<(Entity, &Damageable)>) {
     for (entity, damageable) in damageables.iter() {
         if damageable.is_empty() {
             commands.despawn(entity);

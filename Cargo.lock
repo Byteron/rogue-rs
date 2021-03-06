@@ -163,7 +163,7 @@ version = "0.31.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c69a8137596e84c22d57f3da1b5de1d4230b1742a710091c85f4d7ce50f00f38"
 dependencies = [
- "libloading",
+ "libloading 0.6.7",
 ]
 
 [[package]]
@@ -248,6 +248,7 @@ version = "0.4.0"
 dependencies = [
  "bevy_derive",
  "bevy_ecs",
+ "bevy_reflect",
  "bevy_utils",
  "serde",
  "wasm-bindgen",
@@ -336,7 +337,7 @@ name = "bevy_dynamic_plugin"
 version = "0.4.0"
 dependencies = [
  "bevy_app",
- "libloading",
+ "libloading 0.7.0",
 ]
 
 [[package]]
@@ -345,13 +346,13 @@ version = "0.4.0"
 dependencies = [
  "async-channel",
  "bevy_ecs_macros",
+ "bevy_reflect",
  "bevy_tasks",
  "bevy_utils",
  "bitflags",
  "downcast-rs",
  "fixedbitset 0.3.2",
  "fxhash",
- "lazy_static",
  "parking_lot",
  "rand",
  "serde",
@@ -396,7 +397,6 @@ dependencies = [
  "bevy_scene",
  "bevy_transform",
  "gltf",
- "image",
  "thiserror",
 ]
 
@@ -483,8 +483,6 @@ dependencies = [
 name = "bevy_reflect"
 version = "0.4.0"
 dependencies = [
- "bevy_app",
- "bevy_ecs",
  "bevy_reflect_derive",
  "bevy_utils",
  "downcast-rs",
@@ -569,7 +567,9 @@ dependencies = [
  "bevy_render",
  "bevy_transform",
  "bevy_utils",
+ "bevy_window",
  "guillotiere",
+ "parking_lot",
  "rectangle-pack",
  "serde",
  "thiserror",
@@ -694,6 +694,7 @@ dependencies = [
  "bevy_app",
  "bevy_ecs",
  "bevy_input",
+ "bevy_log",
  "bevy_math",
  "bevy_utils",
  "bevy_window",
@@ -847,7 +848,7 @@ checksum = "5cb92721cb37482245ed88428f72253ce422b3b4ee169c70a0642521bb5db4cc"
 dependencies = [
  "glob",
  "libc",
- "libloading",
+ "libloading 0.6.7",
 ]
 
 [[package]]
@@ -1156,7 +1157,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0a60cceb22c7c53035f8980524fdc7f17cf49681a3c154e6757d30afbec6ec4"
 dependencies = [
  "bitflags",
- "libloading",
+ "libloading 0.6.7",
  "winapi 0.3.9",
 ]
 
@@ -1473,7 +1474,7 @@ dependencies = [
  "bitflags",
  "gfx-auxil",
  "gfx-hal",
- "libloading",
+ "libloading 0.6.7",
  "log",
  "parking_lot",
  "range-alloc",
@@ -1530,7 +1531,7 @@ dependencies = [
  "glow",
  "js-sys",
  "khronos-egl",
- "libloading",
+ "libloading 0.6.7",
  "log",
  "naga",
  "parking_lot",
@@ -1986,7 +1987,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8020ff3b84f9ac87461216ad0501bc09b33c1cbe17404d8ea405160fd164bab"
 dependencies = [
  "libc",
- "libloading",
+ "libloading 0.6.7",
 ]
 
 [[package]]
@@ -2030,6 +2031,16 @@ name = "libloading"
 version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "351a32417a12d5f7e82c368a66781e307834dae04c6ce0cd4456d52989229883"
+dependencies = [
+ "cfg-if 1.0.0",
+ "winapi 0.3.9",
+]
+
+[[package]]
+name = "libloading"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f84d96438c15fcd6c3f244c8fce01d1e2b9c6b5623e9c711dc9286d8fc92d6a"
 dependencies = [
  "cfg-if 1.0.0",
  "winapi 0.3.9",
@@ -3373,9 +3384,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-wasm"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd96394d3d2f119de6c1078fa065b99217db4377f9aac6e87f8393276a0d7962"
+checksum = "8ae741706df70547fca8715f74a8569677666e7be3454313af70f6e158034485"
 dependencies = [
  "tracing",
  "tracing-subscriber",
