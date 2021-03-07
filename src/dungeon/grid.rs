@@ -1,11 +1,11 @@
-use crate::core::math::Vec2i;
+use bevy::math::IVec2;
 
 pub struct Grid {
-    pub cell_size: Vec2i,
+    pub cell_size: IVec2,
 }
 
 impl Grid {
-    pub fn map_to_world(&self, coords: Vec2i) -> Vec2i {
+    pub fn map_to_world(&self, coords: IVec2) -> IVec2 {
         coords * self.cell_size
     }
 }
@@ -13,7 +13,7 @@ impl Grid {
 impl Grid {
     pub fn new(x: i32, y: i32) -> Self {
         Grid {
-            cell_size: Vec2i::new(x, y),
+            cell_size: IVec2::new(x, y),
         }
     }
 }

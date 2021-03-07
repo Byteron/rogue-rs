@@ -9,8 +9,19 @@ mod player;
 mod room;
 mod tween;
 
-use self::{action::Actions, ai::{GoblinAi, TickEvent}, bob::{Coords, Layer, SpatialMap}, damage::{AttackState, Damage, DamageEvent, Damageable}, grid::Grid, images::Images, physics::{KinematicBodyBundle, MoveEvent, PhysicsState, Solid}, player::Controllable, room::Room, tween::TweenPlugin};
-use crate::{core::math::Vec2i, AppState};
+use self::{
+    action::Actions,
+    ai::{GoblinAi, TickEvent},
+    bob::{Coords, Layer, SpatialMap},
+    damage::{AttackState, Damage, DamageEvent, Damageable},
+    grid::Grid,
+    images::Images,
+    physics::{KinematicBodyBundle, MoveEvent, PhysicsState, Solid},
+    player::Controllable,
+    room::Room,
+    tween::TweenPlugin,
+};
+use crate::AppState;
 use bevy::prelude::*;
 use bob::BoardObjectBundle;
 use rand::Rng;
@@ -55,9 +66,7 @@ impl Plugin for DungeonPlugin {
             .on_state_update(
                 Stage::Update,
                 AppState::Dungeon,
-                player::input
-                    .system()
-                    .label(Label::Input)
+                player::input.system().label(Label::Input),
             )
             // AI
             .on_state_update(
@@ -108,10 +117,11 @@ impl Plugin for DungeonPlugin {
             .on_state_update(
                 Stage::Update,
                 AppState::Dungeon,
-                tween::tween.system()
+                tween::tween
+                    .system()
                     .system()
                     .label(Label::Tweening)
-                    .after(Label::Movement)
+                    .after(Label::Movement),
             )
             .on_state_update(
                 Stage::PhysicsUpdate,
@@ -119,20 +129,24 @@ impl Plugin for DungeonPlugin {
                 physics::update_state.system(),
             )
             // View
-            .on_state_update(Stage::SyncUpdate, AppState::Dungeon, bob::update_position.system())
+            .on_state_update(
+                Stage::SyncUpdate,
+                AppState::Dungeon,
+                bob::update_position.system(),
+            )
             // .on_state_update(Stage::SyncUpdate, AppState::Dungeon, bob::update_spatial_map.system())
             .on_state_exit(
                 Stage::Update,
                 AppState::Dungeon,
-                crate::core::despawn_all::<StateCleanup>.system(),
+                crate::despawn_all::<StateCleanup>.system(),
             );
     }
 }
 
 fn setup(mut commands: Commands, images: Res<Images>) {
     let room = Room {
-        position: Vec2i::new(0, 0),
-        size: Vec2i::new(100, 100),
+        position: IVec2::splat(0),
+        size: IVec2::splat(100),
     };
 
     spawn_player(&mut commands, Coords(room.center()), images.get("Human"));
@@ -177,7 +191,7 @@ fn spawn_player(commands: &mut Commands, coords: Coords, material: Handle<ColorM
             material,
             transform: Transform::default(),
             sprite: Sprite {
-                size: Vec2::new(64.0, 64.0),
+                size: Vec2::splat(64.0),
                 resize_mode: SpriteResizeMode::Manual,
                 ..Default::default()
             },
@@ -208,7 +222,7 @@ fn spawn_tile(
             material,
             transform: Transform::default(),
             sprite: Sprite {
-                size: Vec2::new(64.0, 64.0),
+                size: Vec2::splat(64.0),
                 resize_mode: SpriteResizeMode::Manual,
                 ..Default::default()
             },
@@ -236,7 +250,7 @@ fn spawn_enemy(commands: &mut Commands, coords: Coords, material: Handle<ColorMa
             material,
             transform: Transform::default(),
             sprite: Sprite {
-                size: Vec2::new(64.0, 64.0),
+                size: Vec2::splat(64.0),
                 resize_mode: SpriteResizeMode::Manual,
                 ..Default::default()
             },

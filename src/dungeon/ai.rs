@@ -1,8 +1,6 @@
 use bevy::{prelude::*, utils::HashSet};
 use rand::Rng;
 
-use crate::core::math::Vec2i;
-
 use super::{
     action::{Action, Actions},
     bob::Coords,
@@ -21,7 +19,7 @@ pub fn goblin_ai_movement(
 ) {
     let mut rng = rand::thread_rng();
 
-    let mut attack_coordinates: HashSet<Vec2i> = HashSet::default();
+    let mut attack_coordinates: HashSet<IVec2> = HashSet::default();
 
     for coords in players.iter() {
         attack_coordinates.insert(coords.0);
@@ -44,10 +42,7 @@ pub fn goblin_ai_movement(
                 y = rng.gen_range(-1..=1);
             }
 
-            actions.push(Action::Move(
-                goblin_entity,
-                Vec2i::new(x, y),
-            ));
+            actions.push(Action::Move(goblin_entity, IVec2::new(x, y)));
         }
 
         actions.queue(Action::Delay);

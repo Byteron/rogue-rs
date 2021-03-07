@@ -56,8 +56,8 @@ impl Tween {
 impl Default for Tween {
     fn default() -> Self {
         Tween {
-            from: Vec3::zero(),
-            to: Vec3::zero(),
+            from: Vec3::ZERO,
+            to: Vec3::ZERO,
             timer: Timer::from_seconds(0.2, false),
             mode: TweenMode::Move,
         }

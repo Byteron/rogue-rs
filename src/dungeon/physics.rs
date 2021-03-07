@@ -1,27 +1,26 @@
-use crate::core::math::Vec2i;
 use bevy::{prelude::*, utils::HashSet};
 
 use super::bob::Coords;
 
 pub struct MoveEvent {
     pub entity: Entity,
-    pub position: Vec2i,
+    pub position: IVec2,
 }
 
 pub struct PhysicsState {
-    set: HashSet<Vec2i>,
+    set: HashSet<IVec2>,
 }
 
 impl PhysicsState {
-    pub fn is_blocked(&self, coords: Vec2i) -> bool {
+    pub fn is_blocked(&self, coords: IVec2) -> bool {
         self.set.contains(&coords)
     }
 
-    fn block(&mut self, coords: Vec2i) {
+    fn block(&mut self, coords: IVec2) {
         self.set.insert(coords);
     }
 
-    fn unblock(&mut self, coords: Vec2i) {
+    fn unblock(&mut self, coords: IVec2) {
         self.set.remove(&coords);
     }
 
@@ -38,14 +37,13 @@ impl Default for PhysicsState {
     }
 }
 
-
 pub struct Solid;
 
-pub struct Velocity(Vec2i);
+pub struct Velocity(IVec2);
 
 impl Default for Velocity {
     fn default() -> Self {
-        Velocity(Vec2i::zero())
+        Velocity(IVec2::ZERO)
     }
 }
 

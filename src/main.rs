@@ -1,11 +1,10 @@
 use crate::dungeon::DungeonPlugin;
 use bevy::{
     diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
-    ecs::schedule::ReportExecutionOrderAmbiguities,
+    ecs::{component::Component, schedule::ReportExecutionOrderAmbiguities},
     prelude::*,
 };
 
-mod core;
 mod dungeon;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -59,4 +58,10 @@ fn main() {
         // State Plugins
         .add_plugin(DungeonPlugin)
         .run();
+}
+
+pub fn despawn_all<T: Component>(mut commands: Commands, query: Query<Entity, With<T>>) {
+    for e in query.iter() {
+        commands.despawn_recursive(e);
+    }
 }

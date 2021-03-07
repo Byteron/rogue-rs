@@ -1,25 +1,23 @@
 use bevy::{prelude::*, utils::HashMap};
 
-use crate::core::math::Vec2i;
-
 use super::{
     grid::Grid,
     tween::{Tween, TweenMode},
 };
 
-pub struct Coords(pub Vec2i);
+pub struct Coords(pub IVec2);
 
 pub struct Facing {
-    pub direction: Vec2i,
+    pub direction: IVec2,
 }
 
 impl Coords {
-    pub fn get_neighbors(&self) -> [(Vec2i, Coords); 4] {
+    pub fn get_neighbors(&self) -> [(IVec2, Coords); 4] {
         [
-            (Vec2i::up(), Coords(self.0 + Vec2i::up())),
-            (Vec2i::down(), Coords(self.0 + Vec2i::down())),
-            (Vec2i::left(), Coords(self.0 + Vec2i::left())),
-            (Vec2i::right(), Coords(self.0 + Vec2i::right())),
+            (IVec2::new(0, 1), Coords(self.0 + IVec2::new(0, 1))),
+            (IVec2::new(0, -1), Coords(self.0 + IVec2::new(0, -1))),
+            (IVec2::new(1, 0), Coords(self.0 + IVec2::new(1, 0))),
+            (IVec2::new(-1, 0), Coords(self.0 + IVec2::new(-1, 0))),
         ]
     }
 }
@@ -38,9 +36,9 @@ pub struct BoardObjectBundle {
 impl Default for BoardObjectBundle {
     fn default() -> Self {
         BoardObjectBundle {
-            coords: Coords(Vec2i::zero()),
+            coords: Coords(IVec2::ZERO),
             facing: Facing {
-                direction: Vec2i::down(),
+                direction: IVec2::new(0, -1),
             },
             transform: Transform::default(),
             layer: Layer(0),
@@ -62,12 +60,12 @@ pub fn update_position(
 }
 
 pub struct SpatialMap {
-    entities: HashMap<Vec2i, Vec<Entity>>,
-    coords: HashMap<Entity, Vec2i>,
+    entities: HashMap<IVec2, Vec<Entity>>,
+    coords: HashMap<Entity, IVec2>,
 }
 
 impl SpatialMap {
-    pub fn get(&self, position: &Vec2i) -> Option<&Vec<Entity>> {
+    pub fn get(&self, position: &IVec2) -> Option<&Vec<Entity>> {
         self.entities.get(position)
     }
 }

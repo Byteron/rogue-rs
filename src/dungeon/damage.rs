@@ -1,12 +1,10 @@
 use bevy::{prelude::*, utils::HashMap};
 
-use crate::core::math::Vec2i;
-
 use super::bob::Coords;
 
 pub struct AttackEvent {
     pub entity: Entity,
-    pub position: Vec2i,
+    pub position: IVec2,
 }
 
 pub struct DamageEvent {
@@ -88,23 +86,23 @@ impl Damageable {
 }
 
 pub struct AttackState {
-    map: HashMap<Vec2i, Entity>,
+    map: HashMap<IVec2, Entity>,
 }
 
 impl AttackState {
-    pub fn has(&self, coords: Vec2i) -> bool {
+    pub fn has(&self, coords: IVec2) -> bool {
         self.map.contains_key(&coords)
     }
 
-    pub fn get(&self, coords: Vec2i) -> Option<&Entity> {
+    pub fn get(&self, coords: IVec2) -> Option<&Entity> {
         self.map.get(&coords)
     }
 
-    fn insert(&mut self, coords: Vec2i, entity: Entity) {
+    fn insert(&mut self, coords: IVec2, entity: Entity) {
         self.map.insert(coords, entity);
     }
 
-    fn remove(&mut self, coords: Vec2i) {
+    fn remove(&mut self, coords: IVec2) {
         self.map.remove(&coords);
     }
 

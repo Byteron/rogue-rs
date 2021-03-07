@@ -2,17 +2,20 @@ use std::collections::VecDeque;
 
 use bevy::prelude::*;
 
-use crate::core::math::Vec2i;
-
-use super::{ai::TickEvent, bob::{Coords, Facing}, damage::{AttackState, DamageEvent}, physics::{MoveEvent, PhysicsState}};
+use super::{
+    ai::TickEvent,
+    bob::{Coords, Facing},
+    damage::{AttackState, DamageEvent},
+    physics::{MoveEvent, PhysicsState},
+};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Action {
     Tick,
-    Face(Entity, Vec2i),
+    Face(Entity, IVec2),
     PlayerAttack(Entity),
     Attack(Entity),
-    Move(Entity, Vec2i),
+    Move(Entity, IVec2),
     Wait,
     Delay,
 }
@@ -28,7 +31,7 @@ impl Actions {
         self.lock();
         self.queue(Action::Tick);
     }
-    
+
     pub fn lock(&mut self) {
         self.is_locked = true;
     }
@@ -36,7 +39,7 @@ impl Actions {
     pub fn queue(&mut self, action: Action) {
         self.queue.push_back(action);
     }
-    
+
     pub fn push(&mut self, action: Action) {
         self.queue.push_front(action);
     }
@@ -68,7 +71,7 @@ pub fn actions(
     mut move_events: ResMut<Events<MoveEvent>>,
     mut attack_events: ResMut<Events<DamageEvent>>,
     mut tick_events: ResMut<Events<TickEvent>>,
-    mut query: Query<(&Coords, &mut Facing)>
+    mut query: Query<(&Coords, &mut Facing)>,
 ) {
     actions.timer.tick(time.delta());
 
@@ -92,11 +95,9 @@ pub fn actions(
                     let target_position = coords.0 + facing.direction;
 
                     if let Some(target) = attack_state.get(target_position) {
-
                         attack_events.send(DamageEvent {
                             source: entity,
                             target: *target,
-    
                         });
                     }
                 }
@@ -107,7 +108,6 @@ pub fn actions(
                         move_events.send(MoveEvent {
                             entity,
                             position: target_position,
-    
                         });
                     }
                 }

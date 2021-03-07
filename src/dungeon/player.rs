@@ -1,8 +1,9 @@
 use bevy::prelude::*;
 
-use crate::core::math::Vec2i;
-
-use super::{action::{Action, Actions}, bob::Facing};
+use super::{
+    action::{Action, Actions},
+    bob::Facing,
+};
 
 pub struct Controllable;
 
@@ -18,10 +19,10 @@ pub fn input(
 
         let direction = get_input_direction(&input);
 
-        if direction != Vec2i::zero() && facing.direction == direction {
+        if direction != IVec2::ZERO && facing.direction == direction {
             actions.queue(Action::Move(entity, direction));
             actions.lock_and_tick();
-        } else if direction != Vec2i::zero() {
+        } else if direction != IVec2::ZERO {
             actions.queue(Action::Face(entity, direction));
             actions.lock();
         } else if input.pressed(KeyCode::F) {
@@ -34,8 +35,8 @@ pub fn input(
     }
 }
 
-fn get_input_direction(input: &Input<KeyCode>) -> Vec2i {
-    let mut direction = Vec2i::zero();
+fn get_input_direction(input: &Input<KeyCode>) -> IVec2 {
+    let mut direction = IVec2::ZERO;
 
     if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {
         direction.y += 1;
