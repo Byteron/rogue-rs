@@ -5,19 +5,19 @@ use super::{
     tween::{Tween, TweenMode},
 };
 
-pub struct Coords(pub IVec2);
+pub struct Position(pub IVec2);
 
 pub struct Facing {
     pub direction: IVec2,
 }
 
-impl Coords {
-    pub fn get_neighbors(&self) -> [(IVec2, Coords); 4] {
+impl Position {
+    pub fn get_neighbors(&self) -> [(IVec2, Position); 4] {
         [
-            (IVec2::new(0, 1), Coords(self.0 + IVec2::new(0, 1))),
-            (IVec2::new(0, -1), Coords(self.0 + IVec2::new(0, -1))),
-            (IVec2::new(1, 0), Coords(self.0 + IVec2::new(1, 0))),
-            (IVec2::new(-1, 0), Coords(self.0 + IVec2::new(-1, 0))),
+            (IVec2::new(0, 1), Position(self.0 + IVec2::new(0, 1))),
+            (IVec2::new(0, -1), Position(self.0 + IVec2::new(0, -1))),
+            (IVec2::new(1, 0), Position(self.0 + IVec2::new(1, 0))),
+            (IVec2::new(-1, 0), Position(self.0 + IVec2::new(-1, 0))),
         ]
     }
 }
@@ -26,7 +26,7 @@ pub struct Layer(pub i32);
 
 #[derive(Bundle)]
 pub struct BoardObjectBundle {
-    pub coords: Coords,
+    pub coords: Position,
     pub facing: Facing,
     pub transform: Transform,
     pub layer: Layer,
@@ -36,7 +36,7 @@ pub struct BoardObjectBundle {
 impl Default for BoardObjectBundle {
     fn default() -> Self {
         BoardObjectBundle {
-            coords: Coords(IVec2::ZERO),
+            coords: Position(IVec2::ZERO),
             facing: Facing {
                 direction: IVec2::new(0, -1),
             },
@@ -49,7 +49,7 @@ impl Default for BoardObjectBundle {
 
 pub fn update_position(
     grid: Res<Grid>,
-    mut query: Query<(&Transform, &Coords, &Layer, &mut Tween), Changed<Coords>>,
+    mut query: Query<(&Transform, &Position, &Layer, &mut Tween), Changed<Position>>,
 ) {
     for (transform, coords, layer, mut tween) in query.iter_mut() {
         let position = grid.map_to_world(coords.0);
@@ -81,8 +81,8 @@ impl Default for SpatialMap {
 
 pub fn update_spatial_map(
     mut map: ResMut<SpatialMap>,
-    query: Query<(Entity, &Coords), Changed<Coords>>,
-    removed: RemovedComponents<Coords>,
+    query: Query<(Entity, &Position), Changed<Position>>,
+    removed: RemovedComponents<Position>,
 ) {
     for (entity, coords) in query.iter() {
         // Remove Removed

@@ -3,7 +3,7 @@ use rand::Rng;
 
 use super::{
     action::{Action, Actions},
-    bob::Coords,
+    bob::Position,
     player::Controllable,
 };
 
@@ -14,8 +14,8 @@ pub struct GoblinAi;
 pub fn goblin_ai_movement(
     mut actions: ResMut<Actions>,
     mut event_reader: EventReader<TickEvent>,
-    mut query: Query<(Entity, &Coords), With<GoblinAi>>,
-    players: Query<&Coords, With<Controllable>>,
+    mut query: Query<(Entity, &Position), With<GoblinAi>>,
+    players: Query<&Position, With<Controllable>>,
 ) {
     let mut rng = rand::thread_rng();
 

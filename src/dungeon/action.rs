@@ -2,12 +2,7 @@ use std::collections::VecDeque;
 
 use bevy::prelude::*;
 
-use super::{
-    ai::TickEvent,
-    bob::{Coords, Facing},
-    damage::{AttackState, DamageEvent},
-    physics::{MoveEvent, PhysicsState},
-};
+use super::{ai::TickEvent, bob::{Position, Facing}, damage::{AttackState, DamageEvent}, physics::{MoveEvent, PhysicsState, Velocity}};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Action {
@@ -67,11 +62,10 @@ pub fn actions(
     time: Res<Time>,
     mut actions: ResMut<Actions>,
     attack_state: Res<AttackState>,
-    physics_state: Res<PhysicsState>,
     mut move_events: ResMut<Events<MoveEvent>>,
     mut attack_events: ResMut<Events<DamageEvent>>,
     mut tick_events: ResMut<Events<TickEvent>>,
-    mut query: Query<(&Coords, &mut Facing)>,
+    mut query: Query<(&Position, &mut Facing)>,
 ) {
     actions.timer.tick(time.delta());
 
@@ -102,14 +96,10 @@ pub fn actions(
                     }
                 }
                 Action::Move(entity, direction) => {
-                    let coords = query.get_component::<Coords>(entity).unwrap();
-                    let target_position = coords.0 + direction;
-                    if !physics_state.is_blocked(target_position) {
-                        move_events.send(MoveEvent {
-                            entity,
-                            position: target_position,
-                        });
-                    }
+                    move_events.send(MoveEvent {
+                        entity,
+                        direction,
+                    });
                 }
                 Action::Tick => {
                     tick_events.send(TickEvent);

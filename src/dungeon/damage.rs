@@ -1,6 +1,6 @@
 use bevy::{prelude::*, utils::HashMap};
 
-use super::bob::Coords;
+use super::{bob::{Layer, Position}, grid::Grid, tween::{Tween, TweenMode}};
 
 pub struct AttackEvent {
     pub entity: Entity,
@@ -120,15 +120,20 @@ impl Default for AttackState {
 }
 
 pub fn damage(
+    grid: Res<Grid>,
     mut event_reader: EventReader<DamageEvent>,
-    mut damageables: Query<&mut Damageable>,
-    damages: Query<&Damage>,
+    mut damageables: Query<(&mut Damageable, &Position, &Layer)>,
+    mut damages: Query<(&Damage, &Position, &Layer, &mut Tween)>,
 ) {
     for event in event_reader.iter() {
-        if let Ok(mut damageable) = damageables.get_mut(event.target) {
-            if let Ok(damage) = damages.get(event.source) {
+        if let Ok((mut damageable, defender_position, defender_layer)) = damageables.get_mut(event.target) {
+            if let Ok((damage, attacker_position, attacker_layer, mut tween)) = damages.get_mut(event.source) {
                 damageable.damage(damage.amount);
-
+                
+                tween.from = grid.map_to_world(attacker_position.0).extend(attacker_layer.0).as_f32();
+                tween.to = grid.map_to_world(defender_position.0).extend(defender_layer.0).as_f32();
+                tween.start(0.2, TweenMode::Attack);
+                
                 println!(
                     "{:?} damaged {:?} for {}",
                     event.source, event.target, damage.amount
@@ -140,7 +145,7 @@ pub fn damage(
 
 pub fn update_state(
     mut state: ResMut<AttackState>,
-    damageables: Query<(Entity, &Coords), With<Damageable>>,
+    damageables: Query<(Entity, &Position), With<Damageable>>,
 ) {
     state.clear();
 

@@ -12,7 +12,7 @@ mod tween;
 use self::{
     action::Actions,
     ai::{GoblinAi, TickEvent},
-    bob::{Coords, Layer, SpatialMap},
+    bob::{Position, Layer, SpatialMap},
     damage::{AttackState, Damage, DamageEvent, Damageable},
     grid::Grid,
     images::Images,
@@ -126,7 +126,7 @@ impl Plugin for DungeonPlugin {
             .on_state_update(
                 Stage::PhysicsUpdate,
                 AppState::Dungeon,
-                physics::update_state.system(),
+                physics::update.system(),
             )
             // View
             .on_state_update(
@@ -149,21 +149,21 @@ fn setup(mut commands: Commands, images: Res<Images>) {
         size: IVec2::splat(100),
     };
 
-    spawn_player(&mut commands, Coords(room.center()), images.get("Human"));
+    spawn_player(&mut commands, Position(room.center()), images.get("Human"));
 
     let mut rng = rand::thread_rng();
 
     for coords in room.coords().iter_mut() {
         if room.is_door(*coords) {
-            spawn_tile(&mut commands, Coords(*coords), images.get("Floor"), false);
+            spawn_tile(&mut commands, Position(*coords), images.get("Floor"), false);
         } else if room.is_entrance(*coords) {
-            spawn_tile(&mut commands, Coords(*coords), images.get("Floor"), false);
+            spawn_tile(&mut commands, Position(*coords), images.get("Floor"), false);
         } else if room.is_border(*coords) {
-            spawn_tile(&mut commands, Coords(*coords), images.get("Wall"), true);
+            spawn_tile(&mut commands, Position(*coords), images.get("Wall"), true);
         } else if rng.gen_bool(0.1) {
-            spawn_tile(&mut commands, Coords(*coords), images.get("Wall"), true);
+            spawn_tile(&mut commands, Position(*coords), images.get("Wall"), true);
         } else {
-            spawn_tile(&mut commands, Coords(*coords), images.get("Floor"), false);
+            spawn_tile(&mut commands, Position(*coords), images.get("Floor"), false);
         }
     }
 
@@ -174,12 +174,12 @@ fn setup(mut commands: Commands, images: Res<Images>) {
             && !room.is_door(*coords)
             && !room.is_center(*coords)
         {
-            spawn_enemy(&mut commands, Coords(*coords), images.get("Goblin"));
+            spawn_enemy(&mut commands, Position(*coords), images.get("Goblin"));
         }
     }
 }
 
-fn spawn_player(commands: &mut Commands, coords: Coords, material: Handle<ColorMaterial>) {
+fn spawn_player(commands: &mut Commands, coords: Position, material: Handle<ColorMaterial>) {
     // Actual Player Entity
     commands
         .spawn(BoardObjectBundle {
@@ -207,7 +207,7 @@ fn spawn_player(commands: &mut Commands, coords: Coords, material: Handle<ColorM
 
 fn spawn_tile(
     commands: &mut Commands,
-    coords: Coords,
+    coords: Position,
     material: Handle<ColorMaterial>,
     solid: bool,
 ) {
@@ -238,7 +238,7 @@ fn spawn_tile(
     }
 }
 
-fn spawn_enemy(commands: &mut Commands, coords: Coords, material: Handle<ColorMaterial>) {
+fn spawn_enemy(commands: &mut Commands, coords: Position, material: Handle<ColorMaterial>) {
     // Actual Enemy Entity
     commands
         .spawn(BoardObjectBundle {

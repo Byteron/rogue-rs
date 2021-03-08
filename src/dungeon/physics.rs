@@ -1,12 +1,13 @@
 use bevy::{prelude::*, utils::HashSet};
 
-use super::bob::Coords;
+use super::bob::Position;
 
 pub struct MoveEvent {
     pub entity: Entity,
-    pub position: IVec2,
+    pub direction: IVec2,
 }
 
+#[derive(Default)]
 pub struct PhysicsState {
     set: HashSet<IVec2>,
 }
@@ -29,23 +30,10 @@ impl PhysicsState {
     }
 }
 
-impl Default for PhysicsState {
-    fn default() -> Self {
-        PhysicsState {
-            set: HashSet::default(),
-        }
-    }
-}
-
 pub struct Solid;
 
+#[derive(Default)]
 pub struct Velocity(IVec2);
-
-impl Default for Velocity {
-    fn default() -> Self {
-        Velocity(IVec2::ZERO)
-    }
-}
 
 #[derive(Bundle)]
 pub struct KinematicBodyBundle {
@@ -64,21 +52,35 @@ impl Default for KinematicBodyBundle {
 
 pub fn move_event(
     mut event_reader: EventReader<MoveEvent>,
-    mut coordinates: Query<&mut Coords, With<Solid>>,
+    mut positions: Query<&mut Velocity, With<Solid>>,
 ) {
     for event in event_reader.iter() {
-        let mut coords = coordinates.get_mut(event.entity).unwrap();
-        coords.0 = event.position;
+        let mut velocity = positions.get_mut(event.entity).unwrap();
+        velocity.0 = event.direction;
     }
 }
 
-pub fn update_state(
+pub fn update(
     mut state: ResMut<PhysicsState>,
-    mut coordinates: Query<&mut Coords, With<Solid>>,
+    mut positions: Query<&mut Position, With<Solid>>,
+    mut velocities: Query<(Entity, &mut Velocity), With<Solid>>,
 ) {
     state.clear();
 
-    for coords in coordinates.iter_mut() {
-        state.block(coords.0);
+    for position in positions.iter_mut() {
+        state.block(position.0);
+    }
+
+    for (entity, mut velocity) in velocities.iter_mut() {
+        let mut position = positions.get_mut(entity).unwrap();
+        let target_position = position.0 + velocity.0;
+
+        if !state.is_blocked(target_position) {
+            state.unblock(position.0);
+            state.block(target_position);
+            position.0 = target_position;
+        }
+
+        velocity.0 = IVec2::ZERO;
     }
 }
