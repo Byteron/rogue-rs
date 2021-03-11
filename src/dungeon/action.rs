@@ -62,9 +62,9 @@ pub fn actions(
     time: Res<Time>,
     mut actions: ResMut<Actions>,
     attack_state: Res<AttackState>,
-    mut move_events: ResMut<Events<MoveEvent>>,
-    mut attack_events: ResMut<Events<DamageEvent>>,
-    mut tick_events: ResMut<Events<TickEvent>>,
+    mut move_events: EventWriter<MoveEvent>,
+    mut attack_events: EventWriter<DamageEvent>,
+    mut tick_events: EventWriter<TickEvent>,
     mut query: Query<(&Position, &mut Facing)>,
 ) {
     actions.timer.tick(time.delta());

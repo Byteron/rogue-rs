@@ -146,7 +146,7 @@ impl Plugin for DungeonPlugin {
 fn setup(mut commands: Commands, images: Res<Images>) {
     let room = Room {
         position: IVec2::splat(0),
-        size: IVec2::splat(100),
+        size: IVec2::splat(400),
     };
 
     spawn_player(&mut commands, Position(room.center()), images.get("Human"));
