@@ -1,11 +1,13 @@
 mod components;
 mod resources;
 mod systems;
+mod utils;
 
 use bevy::{prelude::*, utils::HashMap};
 use components::*;
 use rand::Rng;
 use resources::*;
+use utils::Room;
 
 fn main() {
     App::new()
@@ -101,22 +103,4 @@ fn setup(mut commands: Commands, settings: Res<Settings>) {
 
     commands.insert_resource(tiles);
     commands.insert_resource(Floor { current: 0 });
-}
-
-pub struct Room {
-    start: IVec2,
-    end: IVec2,
-}
-
-impl Room {
-    fn new(start: IVec2, end: IVec2) -> Self {
-        return Room { start, end };
-    }
-
-    fn is_wall(&self, coords: IVec2) -> bool {
-        return self.start.x == coords.x
-            || self.end.x - 1 == coords.x
-            || self.start.y == coords.y
-            || self.end.y - 1 == coords.y;
-    }
 }
