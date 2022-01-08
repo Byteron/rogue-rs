@@ -7,7 +7,7 @@ pub struct Settings {
     pub tile_size: IVec2,
 }
 
-pub struct Tiles(pub HashMap<(usize, IVec2), Entity>);
+pub struct Tiles(pub HashMap<(i32, i32, usize), Entity>);
 
 pub struct Floor {
     pub current: usize,

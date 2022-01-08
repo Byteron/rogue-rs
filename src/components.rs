@@ -4,7 +4,11 @@ use bevy::prelude::*;
 pub struct Controllable;
 
 #[derive(Component)]
-pub struct MoveTimer(pub Timer, pub IVec2, pub IVec2);
+pub struct MoveTween {
+    pub start: IVec2,
+    pub end: IVec2,
+    pub timer: Timer,
+}
 
 #[derive(Component, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct Coords(pub IVec2);

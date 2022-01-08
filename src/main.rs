@@ -17,7 +17,7 @@ fn main() {
         })
         .insert_resource(Settings {
             floor_count: 1,
-            room_count: 5,
+            room_count: 1,
             room_size: IVec2::splat(13),
             tile_size: IVec2::splat(64),
         })
@@ -46,11 +46,11 @@ fn setup(mut commands: Commands, settings: Res<Settings>) {
             ..Default::default()
         })
         .insert(Controllable)
-        .insert(MoveTimer(
-            Timer::from_seconds(0.2, false),
-            start_tile,
-            start_tile
-        ))
+        .insert(MoveTween {
+            start: start_tile,
+            end: start_tile,
+            timer: Timer::from_seconds(0.2, false),
+        })
         .insert(Coords(start_tile))
         .insert(Transform::from_translation(start_position));
 
@@ -93,7 +93,7 @@ fn setup(mut commands: Commands, settings: Res<Settings>) {
                         commands.entity(tile).insert(Solid);
                     }
 
-                    tiles.0.insert((floor, tile_coords), tile);
+                    tiles.0.insert((tile_coords.x, tile_coords.y, floor), tile);
                 }
             }
         }

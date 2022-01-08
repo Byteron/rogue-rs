@@ -2,9 +2,9 @@ use crate::components::*;
 use crate::resources::*;
 use bevy::prelude::*;
 
-pub fn tick(time: Res<Time>, mut query: Query<&mut MoveTimer>) {
-    for mut timer in query.iter_mut() {
-        timer.0.tick(time.delta());
+pub fn tick(time: Res<Time>, mut query: Query<&mut MoveTween>) {
+    for mut tween in query.iter_mut() {
+        tween.timer.tick(time.delta());
     }
 }
 
@@ -13,33 +13,39 @@ pub fn control(
     tiles: Res<Tiles>,
     floor: Res<Floor>,
     solids: Query<&Solid>,
-    mut query: Query<(&mut Coords, &mut MoveTimer), With<Controllable>>,
+    mut query: Query<(&mut Coords, &mut MoveTween), With<Controllable>>,
 ) {
-    for (mut coords, mut timer) in query.iter_mut() {
-        if !timer.0.finished() {
+    for (mut coords, mut tween) in query.iter_mut() {
+        if !tween.timer.finished() {
             continue;
         }
 
         let direction = get_direction(&input);
         let target_coords = coords.0 + direction;
 
-        let tile = tiles.0.get(&(floor.current, target_coords)).unwrap();
+        let tile = tiles
+            .0
+            .get(&(target_coords.x, target_coords.y, floor.current))
+            .unwrap();
 
         if solids.get(*tile).is_ok() || direction == IVec2::ZERO {
             continue;
         }
 
-        timer.1 = coords.0;
-        timer.2 = target_coords;
-        coords.0 = target_coords;
+        tween.start = coords.0;
+        tween.end = target_coords;
+        tween.timer.reset();
 
-        timer.0.reset();
+        coords.0 = target_coords;
     }
 }
 
-pub fn lerp(settings: Res<Settings>, mut query: Query<(&mut Transform, &MoveTimer)>) {
-    for (mut transform, timer) in query.iter_mut() {
-        let between_pos = timer.1.as_vec2().lerp(timer.2.as_vec2(), timer.0.percent());
+pub fn lerp(settings: Res<Settings>, mut query: Query<(&mut Transform, &MoveTween)>) {
+    for (mut transform, tween) in query.iter_mut() {
+        let between_pos = tween
+            .start
+            .as_vec2()
+            .lerp(tween.end.as_vec2(), tween.timer.percent());
         transform.translation = (between_pos * settings.tile_size.as_vec2()).extend(0.);
     }
 }
