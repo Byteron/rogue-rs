@@ -4,6 +4,9 @@ use bevy::prelude::*;
 pub struct Controllable;
 
 #[derive(Component)]
+pub struct Roamer;
+
+#[derive(Component)]
 pub struct MoveTween {
     pub start: IVec2,
     pub end: IVec2,
@@ -15,3 +18,9 @@ pub struct Coords(pub IVec2);
 
 #[derive(Component)]
 pub struct Solid;
+
+
+#[derive(Component)]
+pub struct HasCharacter {
+    pub entity: Entity,
+}

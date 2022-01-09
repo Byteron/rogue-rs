@@ -1,6 +1,8 @@
 use crate::components::*;
+use crate::events::*;
 use crate::resources::*;
 use bevy::prelude::*;
+use rand::Rng;
 
 pub fn tick(time: Res<Time>, mut query: Query<&mut MoveTween>) {
     for mut tween in query.iter_mut() {
@@ -9,13 +11,16 @@ pub fn tick(time: Res<Time>, mut query: Query<&mut MoveTween>) {
 }
 
 pub fn control(
+    mut commands: Commands,
+    mut events: EventWriter<MovedEvent>,
     input: Res<Input<KeyCode>>,
     tiles: Res<Tiles>,
     floor: Res<Floor>,
-    solids: Query<&Solid>,
-    mut query: Query<(&mut Coords, &mut MoveTween), With<Controllable>>,
+    solid_tiles: Query<&Solid>,
+    char_tiles: Query<&HasCharacter>,
+    mut query: Query<(Entity, &mut Coords, &mut MoveTween), With<Controllable>>,
 ) {
-    for (mut coords, mut tween) in query.iter_mut() {
+    for (player, mut coords, mut tween) in query.iter_mut() {
         if !tween.timer.finished() {
             continue;
         }
@@ -23,20 +28,86 @@ pub fn control(
         let direction = get_direction(&input);
         let target_coords = coords.0 + direction;
 
-        let tile = tiles
+        let target_tile = tiles
             .0
             .get(&(target_coords.x, target_coords.y, floor.current))
             .unwrap();
 
-        if solids.get(*tile).is_ok() || direction == IVec2::ZERO {
+        if solid_tiles.get(*target_tile).is_ok()
+            || char_tiles.get(*target_tile).is_ok()
+            || direction == IVec2::ZERO
+        {
             continue;
         }
+
+        let tile = tiles
+            .0
+            .get(&(coords.0.x, coords.0.y, floor.current))
+            .unwrap();
+
+        commands.entity(*tile).remove::<HasCharacter>();
+        commands
+            .entity(*target_tile)
+            .insert(HasCharacter { entity: player });
 
         tween.start = coords.0;
         tween.end = target_coords;
         tween.timer.reset();
 
         coords.0 = target_coords;
+
+        events.send(MovedEvent);
+    }
+}
+
+pub fn roam(
+    mut commands: Commands,
+    tiles: Res<Tiles>,
+    floor: Res<Floor>,
+    solid_tiles: Query<&Solid>,
+    char_tiles: Query<&HasCharacter>,
+    mut events: EventReader<MovedEvent>,
+    mut query: Query<(Entity, &mut Coords, &mut MoveTween), With<Roamer>>,
+) {
+    for _ in events.iter() {
+        for (roamer, mut coords, mut tween) in query.iter_mut() {
+            if !tween.timer.finished() {
+                continue;
+            }
+
+            let mut rng = rand::thread_rng();
+
+            let direction = IVec2::new(rng.gen_range(-1..2), rng.gen_range(-1..2));
+            let target_coords = coords.0 + direction;
+
+            let target_tile = tiles
+                .0
+                .get(&(target_coords.x, target_coords.y, floor.current))
+                .unwrap();
+
+            if solid_tiles.get(*target_tile).is_ok()
+                || char_tiles.get(*target_tile).is_ok()
+                || direction == IVec2::ZERO
+            {
+                continue;
+            }
+
+            let tile = tiles
+                .0
+                .get(&(coords.0.x, coords.0.y, floor.current))
+                .unwrap();
+
+            commands.entity(*tile).remove::<HasCharacter>();
+            commands
+                .entity(*target_tile)
+                .insert(HasCharacter { entity: roamer });
+
+            tween.start = coords.0;
+            tween.end = target_coords;
+            tween.timer.reset();
+
+            coords.0 = target_coords;
+        }
     }
 }
 
