@@ -71,6 +71,7 @@ fn setup(mut commands: Commands, settings: Res<Settings>) {
                             ..Default::default()
                         })
                         .insert(Coords(tile_coords))
+                        .insert(CharacterSlot { entity: None })
                         .id();
 
                     if room.is_wall(tile_coords) {
@@ -133,9 +134,9 @@ fn spawn_character(
 
     let tile = tiles.0.get(&(start_tile.x, start_tile.y, 0)).unwrap();
 
-    commands
-        .entity(*tile)
-        .insert(HasCharacter { entity: character });
+    commands.entity(*tile).insert(CharacterSlot {
+        entity: Some(character),
+    });
 
     character
 }

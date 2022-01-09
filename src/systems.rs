@@ -11,13 +11,12 @@ pub fn tick(time: Res<Time>, mut query: Query<&mut MoveTween>) {
 }
 
 pub fn control(
-    mut commands: Commands,
     mut events: EventWriter<MovedEvent>,
     input: Res<Input<KeyCode>>,
     tiles: Res<Tiles>,
     floor: Res<Floor>,
     solid_tiles: Query<&Solid>,
-    char_tiles: Query<&HasCharacter>,
+    mut char_slots: Query<&mut CharacterSlot>,
     mut query: Query<(Entity, &mut Coords, &mut MoveTween), With<Controllable>>,
 ) {
     for (player, mut coords, mut tween) in query.iter_mut() {
@@ -34,7 +33,7 @@ pub fn control(
             .unwrap();
 
         if solid_tiles.get(*target_tile).is_ok()
-            || char_tiles.get(*target_tile).is_ok()
+            || char_slots.get(*target_tile).unwrap().entity.is_some()
             || direction == IVec2::ZERO
         {
             continue;
@@ -45,10 +44,8 @@ pub fn control(
             .get(&(coords.0.x, coords.0.y, floor.current))
             .unwrap();
 
-        commands.entity(*tile).remove::<HasCharacter>();
-        commands
-            .entity(*target_tile)
-            .insert(HasCharacter { entity: player });
+        char_slots.get_mut(*tile).unwrap().entity = None;
+        char_slots.get_mut(*target_tile).unwrap().entity = Some(player);
 
         tween.start = coords.0;
         tween.end = target_coords;
@@ -61,11 +58,10 @@ pub fn control(
 }
 
 pub fn roam(
-    mut commands: Commands,
     tiles: Res<Tiles>,
     floor: Res<Floor>,
     solid_tiles: Query<&Solid>,
-    char_tiles: Query<&HasCharacter>,
+    mut char_slots: Query<&mut CharacterSlot>,
     mut events: EventReader<MovedEvent>,
     mut query: Query<(Entity, &mut Coords, &mut MoveTween), With<Roamer>>,
 ) {
@@ -86,7 +82,7 @@ pub fn roam(
                 .unwrap();
 
             if solid_tiles.get(*target_tile).is_ok()
-                || char_tiles.get(*target_tile).is_ok()
+                || char_slots.get(*target_tile).unwrap().entity.is_some()
                 || direction == IVec2::ZERO
             {
                 continue;
@@ -97,10 +93,8 @@ pub fn roam(
                 .get(&(coords.0.x, coords.0.y, floor.current))
                 .unwrap();
 
-            commands.entity(*tile).remove::<HasCharacter>();
-            commands
-                .entity(*target_tile)
-                .insert(HasCharacter { entity: roamer });
+            char_slots.get_mut(*tile).unwrap().entity = None;
+            char_slots.get_mut(*target_tile).unwrap().entity = Some(roamer);
 
             tween.start = coords.0;
             tween.end = target_coords;

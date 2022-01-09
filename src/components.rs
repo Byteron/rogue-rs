@@ -19,8 +19,7 @@ pub struct Coords(pub IVec2);
 #[derive(Component)]
 pub struct Solid;
 
-
 #[derive(Component)]
-pub struct HasCharacter {
-    pub entity: Entity,
+pub struct CharacterSlot {
+    pub entity: Option<Entity>,
 }
